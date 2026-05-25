@@ -1,7 +1,6 @@
 databases:
   - name: syriaprojects-db
     databaseName: appdb
-    user: postgres
     plan: free
 
 services:
