@@ -27,7 +27,7 @@ from app.models.project import (
     RiskLevel,
     VerificationStatus,
 )
-from app.models.user import GlobalRole, User, UserType
+from app.models.user import User, UserType
 
 
 # ---------------------------------------------------------------------------
@@ -84,17 +84,6 @@ def seed():
         # ------------------------------------------------------------------ #
         #  USERS                                                               #
         # ------------------------------------------------------------------ #
-
-        admin = User(
-            email="almousa.emad.92@gmail.com",
-            hashed_password=hash_password("123456789"),
-            first_name="Emad",
-            last_name="Almousa",
-            phone="+49 170 000 0000",
-            country="Germany",
-            global_role=GlobalRole.ADMIN,
-            user_type=UserType.OTHER,
-        )
 
         u1 = User(
             email="ahmad.halabi@syriaprojects.sy",
@@ -187,7 +176,7 @@ def seed():
             email_verified=True,
         )
 
-        users = [admin, u1, u2, u3, u4, u5, u6, u7, u8, u9]
+        users = [u1, u2, u3, u4, u5, u6, u7, u8, u9]
         for u in users:
             db.add(u)
         db.flush()
