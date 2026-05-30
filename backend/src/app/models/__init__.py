@@ -3,3 +3,4 @@ from app.models.project import (  # noqa: F401
     Project, ProjectMember, ProjectInterest,
     ProjectBudgetItem, ProjectMilestone, ProjectUpdate,
 )
+from app.models.token import AuthToken  # noqa: F401

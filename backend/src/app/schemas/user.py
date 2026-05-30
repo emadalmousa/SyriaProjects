@@ -1,11 +1,11 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, field_serializer
+from pydantic import BaseModel, EmailStr, Field, field_serializer
 from app.models.user import GlobalRole, UserType
 
 
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(min_length=8)
     first_name: str | None = None
     last_name: str | None = None
     phone: str | None = None
