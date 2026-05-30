@@ -24,6 +24,8 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     api.users
@@ -43,6 +45,17 @@ export default function ProfilePage() {
 
   function set(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  async function handleResetPassword() {
+    if (!user) return;
+    setResetLoading(true);
+    try {
+      await api.auth.forgotPassword(user.email);
+      setResetSent(true);
+    } finally {
+      setResetLoading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -179,6 +192,22 @@ export default function ProfilePage() {
               {loading ? "Wird gespeichert..." : "Speichern"}
             </button>
           </form>
+
+          <div className="mt-6 border-t pt-6 dark:border-gray-700">
+            {resetSent ? (
+              <div className="rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                E-Mail zum Zurücksetzen wurde an <strong>{user.email}</strong> gesendet.
+              </div>
+            ) : (
+              <button
+                onClick={handleResetPassword}
+                disabled={resetLoading}
+                className="w-full rounded-lg border border-gray-300 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                {resetLoading ? "Wird gesendet..." : "Passwort zurücksetzen"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </main>
