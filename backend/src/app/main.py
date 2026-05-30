@@ -23,3 +23,15 @@ app.include_router(uploads.router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.post("/admin/reset-db")
+def reset_db(secret: str):
+    from app.core.database import Base, engine
+    from app.models import user, project, token  # noqa
+    if secret != settings.secret_key:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Forbidden")
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    return {"status": "db reset done"}
