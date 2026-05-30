@@ -29,6 +29,14 @@ export const api = {
       request<{ access_token: string; token_type: string }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
     googleLogin: (id_token: string) =>
       request<{ access_token: string; token_type: string }>("/auth/google", { method: "POST", body: JSON.stringify({ id_token }) }),
+    verifyEmail: (token: string) =>
+      request<{ message: string }>(`/auth/verify-email?token=${token}`),
+    resendVerification: (email: string) =>
+      request<{ message: string }>("/auth/resend-verification", { method: "POST", body: JSON.stringify({ email }) }),
+    forgotPassword: (email: string) =>
+      request<{ message: string }>("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }),
+    resetPassword: (token: string, new_password: string, confirm_password: string) =>
+      request<{ message: string }>("/auth/reset-password", { method: "POST", body: JSON.stringify({ token, new_password, confirm_password }) }),
   },
   users: {
     me: () => request("/users/me"),

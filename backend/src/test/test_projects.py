@@ -2,12 +2,7 @@ import pytest
 from decimal import Decimal
 from app.schemas.project import ProjectCreate, calculate_needed_capital
 from app.models.project import ProjectCategory
-
-
-def register_and_login(client, email, password="pass123"):
-    client.post("/auth/register", json={"email": email, "password": password})
-    resp = client.post("/auth/login", json={"email": email, "password": password})
-    return {"Authorization": f"Bearer {resp.json()['access_token']}"}
+from test.conftest import register_and_login  # use shared helper
 
 
 BASE_PROJECT = {
@@ -37,7 +32,7 @@ def test_create_project_with_full_fields(client, owner_headers):
     assert data["title"] == "Kleine Bäckerei in Aleppo"
     assert data["category"] == "FOOD"
     assert data["city"] == "Aleppo"
-    assert data["status"] == "DRAFT"
+    assert data["status"] == "IDEA"
 
 
 def test_needed_capital_auto_calculated(client, owner_headers):

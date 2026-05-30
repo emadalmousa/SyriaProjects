@@ -1,30 +1,44 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { api } from "@/lib/api";
 import { saveToken } from "@/lib/auth";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+
+  const registeredParam = searchParams.get("registered");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setShowResend(false);
+    setResendSent(false);
     setLoading(true);
     try {
       const data = await api.auth.login(email, password);
       saveToken(data.access_token);
       router.push("/dashboard");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Login fehlgeschlagen");
+      const message = err instanceof Error ? err.message : "Login fehlgeschlagen";
+      if (message === "EMAIL_NOT_VERIFIED") {
+        setError("EMAIL_NOT_VERIFIED");
+        setShowResend(true);
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -39,10 +53,9 @@ export default function LoginPage() {
         setGoogleLoading(false);
         return;
       }
-      // After Google sign-in, get the session and exchange token
       const { getSession } = await import("next-auth/react");
       const session = await getSession();
-      const googleIdToken = (session as any)?.googleIdToken;
+      const googleIdToken = (session as { googleIdToken?: string } | null)?.googleIdToken;
       if (googleIdToken) {
         const data = await api.auth.googleLogin(googleIdToken);
         saveToken(data.access_token);
@@ -54,6 +67,18 @@ export default function LoginPage() {
     }
   }
 
+  async function handleResend() {
+    setResendLoading(true);
+    try {
+      await api.auth.resendVerification(email);
+      setResendSent(true);
+    } catch {
+      setResendSent(true);
+    } finally {
+      setResendLoading(false);
+    }
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md rounded-2xl border bg-white p-8 shadow-sm">
@@ -62,9 +87,31 @@ export default function LoginPage() {
           <p className="mt-1 text-sm text-gray-500">Melde dich bei SyriaProjects an</p>
         </div>
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
+        {registeredParam === "1" && (
+          <div className="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-700">
+            Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse.
+          </div>
         )}
+
+        {error === "EMAIL_NOT_VERIFIED" ? (
+          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+            <p>Bitte bestätige zuerst deine E-Mail-Adresse.</p>
+            {showResend && !resendSent && (
+              <button
+                onClick={handleResend}
+                disabled={resendLoading}
+                className="mt-2 font-medium text-blue-600 hover:underline disabled:opacity-50"
+              >
+                {resendLoading ? "Wird gesendet..." : "Bestätigungs-E-Mail erneut senden"}
+              </button>
+            )}
+            {resendSent && (
+              <p className="mt-2 text-green-700">Bestätigungs-E-Mail wurde erneut gesendet.</p>
+            )}
+          </div>
+        ) : error ? (
+          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
+        ) : null}
 
         {/* Google Login */}
         <button
@@ -96,7 +143,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="deine@email.de"
-              className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
             />
           </div>
           <div>
@@ -107,8 +154,13 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
             />
+          </div>
+          <div className="text-right">
+            <Link href="/forgot-password" className="text-sm font-medium text-blue-600 hover:underline">
+              Passwort vergessen?
+            </Link>
           </div>
           <button
             type="submit"
@@ -127,5 +179,13 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-gray-50"><p className="text-sm text-gray-500">Laden...</p></div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
