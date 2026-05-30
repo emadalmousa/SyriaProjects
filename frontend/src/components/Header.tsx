@@ -37,14 +37,23 @@ export default function Header() {
         <div className="flex items-center gap-3">
           {user && (
             <>
-              <span className="hidden text-sm text-gray-500 dark:text-gray-400 sm:block">
-                {user.full_name || user.email}
-              </span>
               <Link
                 href="/profile"
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                className="group relative flex items-center justify-center"
+                title="Profil bearbeiten"
               >
-                Profil bearbeiten
+                {user.avatar_url ? (
+                  <img src={user.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-transparent group-hover:ring-blue-400 transition" />
+                ) : (
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white transition ring-2 ring-transparent group-hover:ring-blue-400 ${
+                    ["bg-blue-500","bg-violet-500","bg-emerald-500","bg-amber-500","bg-rose-500","bg-cyan-500"][user.id % 6]
+                  }`}>
+                    {[user.first_name, user.last_name].filter(Boolean).map((n) => n![0].toUpperCase()).join("") || user.email[0].toUpperCase()}
+                  </div>
+                )}
+                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                  Profil bearbeiten
+                </span>
               </Link>
               <button
                 onClick={logout}
