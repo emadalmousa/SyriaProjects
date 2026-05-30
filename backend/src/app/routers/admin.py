@@ -8,6 +8,8 @@ from app.routers.users import get_current_user
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+TEST_EMAIL_DOMAIN = "@syriaprojects.sy"
+
 
 def require_admin(current_user: User = Depends(get_current_user)):
     if not is_admin(current_user):
@@ -15,29 +17,42 @@ def require_admin(current_user: User = Depends(get_current_user)):
     return current_user
 
 
+def _get_test_user_ids(db: Session) -> list[int]:
+    return [r[0] for r in db.query(User.id).filter(User.email.like(f"%{TEST_EMAIL_DOMAIN}")).all()]
+
+
+def _get_test_project_ids(db: Session, test_user_ids: list[int]) -> list[int]:
+    if not test_user_ids:
+        return []
+    return [r[0] for r in db.query(Project.id).filter(Project.created_by_user_id.in_(test_user_ids)).all()]
+
+
 @router.get("/test-data/status")
 def test_data_status(db: Session = Depends(get_db), _: User = Depends(require_admin)):
-    user_count = db.query(User).filter(User.is_test_data == True).count()  # noqa: E712
-    project_count = db.query(Project).filter(Project.is_test_data == True).count()  # noqa: E712
-    return {"exists": user_count > 0 or project_count > 0, "users": user_count, "projects": project_count}
+    test_user_ids = _get_test_user_ids(db)
+    test_project_ids = _get_test_project_ids(db, test_user_ids)
+    return {
+        "exists": len(test_user_ids) > 0,
+        "users": len(test_user_ids),
+        "projects": len(test_project_ids),
+    }
 
 
 @router.post("/test-data/seed")
 def seed_test_data(db: Session = Depends(get_db), _: User = Depends(require_admin)):
-    existing = db.query(User).filter(User.is_test_data == True).first()  # noqa: E712
-    if existing:
+    if _get_test_user_ids(db):
         raise HTTPException(status_code=400, detail="Test data already exists")
     from app.seed_demo import seed
     seed()
-    user_count = db.query(User).filter(User.is_test_data == True).count()  # noqa: E712
-    project_count = db.query(Project).filter(Project.is_test_data == True).count()  # noqa: E712
-    return {"status": "seeded", "users": user_count, "projects": project_count}
+    test_user_ids = _get_test_user_ids(db)
+    test_project_ids = _get_test_project_ids(db, test_user_ids)
+    return {"status": "seeded", "users": len(test_user_ids), "projects": len(test_project_ids)}
 
 
 @router.delete("/test-data")
 def delete_test_data(db: Session = Depends(get_db), _: User = Depends(require_admin)):
-    test_user_ids = [r[0] for r in db.query(User.id).filter(User.is_test_data == True).all()]  # noqa: E712
-    test_project_ids = [r[0] for r in db.query(Project.id).filter(Project.is_test_data == True).all()]  # noqa: E712
+    test_user_ids = _get_test_user_ids(db)
+    test_project_ids = _get_test_project_ids(db, test_user_ids)
 
     if test_project_ids:
         db.query(ProjectUpdate).filter(ProjectUpdate.project_id.in_(test_project_ids)).delete(synchronize_session=False)
