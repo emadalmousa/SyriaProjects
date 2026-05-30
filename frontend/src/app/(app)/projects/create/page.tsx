@@ -85,7 +85,7 @@ export default function CreateProjectPage() {
     }
   }
 
-  const inputClass = "w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none dark:bg-gray-800 dark:border-gray-600 dark:text-white";
+  const inputClass = "w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none dark:bg-gray-800 dark:border-gray-600 dark:text-white";
   const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300";
   const sectionClass = "mb-8 rounded-xl border bg-white p-6 shadow-sm dark:bg-gray-800 dark:border-gray-700";
 

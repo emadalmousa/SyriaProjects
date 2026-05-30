@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
@@ -13,7 +12,8 @@ const COUNTRIES = [
 ];
 
 export default function RegisterPage() {
-  const router = useRouter();
+  const [registered, setRegistered] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
@@ -49,12 +49,34 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await api.auth.register(form.email, form.password, form.first_name, form.last_name, form.phone, form.country);
-      router.push("/login?registered=1");
+      setRegisteredEmail(form.email);
+      setRegistered(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registrierung fehlgeschlagen");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (registered) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-md rounded-2xl border bg-white p-8 shadow-sm">
+          <div className="mb-6 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Registrierung abgeschlossen</h1>
+          </div>
+          <div className="mb-6 rounded-lg bg-green-50 p-4 text-sm text-green-700">
+            Eine Bestätigungs-E-Mail wurde an <strong>{registeredEmail}</strong> gesendet.
+            Bitte überprüfe deinen Posteingang und klicke auf den Bestätigungslink.
+          </div>
+          <p className="text-center text-sm text-gray-500">
+            <Link href="/login" className="font-medium text-blue-600 hover:underline">
+              Zur Anmeldeseite
+            </Link>
+          </p>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -79,7 +101,7 @@ export default function RegisterPage() {
                 onChange={(e) => set("first_name", e.target.value)}
                 required
                 placeholder="Ahmad"
-                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
               />
             </div>
             <div>
@@ -90,7 +112,7 @@ export default function RegisterPage() {
                 onChange={(e) => set("last_name", e.target.value)}
                 required
                 placeholder="Al-Halabi"
-                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>
@@ -103,7 +125,7 @@ export default function RegisterPage() {
               onChange={(e) => set("email", e.target.value)}
               required
               placeholder="deine@email.de"
-              className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
@@ -117,7 +139,7 @@ export default function RegisterPage() {
                 required
                 placeholder="••••••••"
                 minLength={6}
-                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
               />
             </div>
             <div>
@@ -128,7 +150,7 @@ export default function RegisterPage() {
                 onChange={(e) => set("confirm_password", e.target.value)}
                 required
                 placeholder="••••••••"
-                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>
@@ -139,7 +161,7 @@ export default function RegisterPage() {
               <select
                 value={form.country}
                 onChange={(e) => set("country", e.target.value)}
-                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
               >
                 <option value="">Bitte wählen</option>
                 {COUNTRIES.map((c) => (
@@ -154,7 +176,7 @@ export default function RegisterPage() {
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
                 placeholder="+49 123 456789"
-                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>

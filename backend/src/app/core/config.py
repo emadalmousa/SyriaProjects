@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     smtp_from: str = "noreply@syriaprojects.com"
     smtp_tls: bool = True
     email_console_mode: bool = True  # In dev: Token in Konsole ausgeben statt Email senden
+    resend_api_key: str = ""
 
     # URLs
     frontend_url: str = "http://localhost:3000"

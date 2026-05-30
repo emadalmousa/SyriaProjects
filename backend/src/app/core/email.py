@@ -32,6 +32,23 @@ class EmailService:
         if settings.email_console_mode:
             print(f"\n[EMAIL] To: {to} | Subject: {subject}\n{html}\n")
             return
+
+        if settings.resend_api_key:
+            self._send_resend(to, subject, html)
+        else:
+            self._send_smtp(to, subject, html)
+
+    def _send_resend(self, to: str, subject: str, html: str) -> None:
+        import resend
+        resend.api_key = settings.resend_api_key
+        resend.Emails.send({
+            "from": settings.smtp_from,
+            "to": to,
+            "subject": subject,
+            "html": html,
+        })
+
+    def _send_smtp(self, to: str, subject: str, html: str) -> None:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
         msg["From"] = settings.smtp_from

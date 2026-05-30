@@ -118,7 +118,7 @@ export default function ProfilePage() {
                   onChange={(e) => set("first_name", e.target.value)}
                   required
                   placeholder="Ahmad"
-                  className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
               </div>
               <div>
@@ -128,7 +128,7 @@ export default function ProfilePage() {
                   value={form.last_name}
                   onChange={(e) => set("last_name", e.target.value)}
                   placeholder="Al-Halabi"
-                  className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
               </div>
             </div>
@@ -153,7 +153,7 @@ export default function ProfilePage() {
                   value={form.phone}
                   onChange={(e) => set("phone", e.target.value)}
                   placeholder="+49 123 456789"
-                  className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
               </div>
               <div>
@@ -161,7 +161,7 @@ export default function ProfilePage() {
                 <select
                   value={form.country}
                   onChange={(e) => set("country", e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 >
                   <option value="">Bitte wählen</option>
                   {COUNTRIES.map((c) => (
