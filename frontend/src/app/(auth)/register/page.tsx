@@ -34,8 +34,8 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (form.password.length < 6) {
-      setError("Passwort muss mindestens 6 Zeichen lang sein");
+    if (form.password.length < 8) {
+      setError("Passwort muss mindestens 8 Zeichen lang sein");
       return;
     }
     if (form.password !== form.confirm_password) {
@@ -138,7 +138,7 @@ export default function RegisterPage() {
                 onChange={(e) => set("password", e.target.value)}
                 required
                 placeholder="••••••••"
-                minLength={6}
+                minLength={8}
                 className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
               />
             </div>
