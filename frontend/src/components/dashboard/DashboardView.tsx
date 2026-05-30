@@ -1,0 +1,187 @@
+"use client";
+import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { api } from "@/lib/api";
+import type { User, Project } from "@/types";
+
+import { PageSpinner } from "@/components/ui";
+import { SearchBar, FilterChips } from "@/components/dashboard";
+import {
+  ProjectFilters, ProjectCard,
+  emptyFilters, countFilters, CAPITAL_BUCKETS,
+  CATEGORY_LABELS, CATEGORY_ICONS, STATUS_LABELS,
+} from "@/components/project";
+import type { ProjectFiltersState } from "@/components/project";
+
+export function DashboardView() {
+  const router = useRouter();
+  const [user, setUser]       = useState<User | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [filters, setFilters]   = useState<ProjectFiltersState>(emptyFilters());
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [search, setSearch]           = useState("");
+  const [statusUpdating, setStatusUpdating] = useState<number | null>(null);
+
+  useEffect(() => {
+    api.users.me()
+      .then((u) => { setUser(u as User); return api.projects.list(); })
+      .then((p) => setProjects((p as Project[]).sort((a, b) => b.id - a.id)))
+      .catch(() => router.push("/login"))
+      .finally(() => setLoading(false));
+  }, [router]);
+
+  // ── Derived filter options ───────────────────────────────────────────────
+
+  const availableCategories = useMemo(() => { const s = new Set<string>(); projects.forEach((p) => s.add(p.category)); return Array.from(s).sort(); }, [projects]);
+  const availableStatuses   = useMemo(() => { const s = new Set<string>(); projects.forEach((p) => s.add(p.status));   return Array.from(s).sort(); }, [projects]);
+  const availableCountries  = useMemo(() => { const s = new Set<string>(); projects.forEach((p) => { if (p.country)  s.add(p.country);  }); return Array.from(s).sort(); }, [projects]);
+  const availableCities     = useMemo(() => { const s = new Set<string>(); projects.forEach((p) => { if (p.city)     s.add(p.city);     }); return Array.from(s).sort(); }, [projects]);
+  const availableDistricts  = useMemo(() => { const s = new Set<string>(); projects.forEach((p) => { if (p.district) s.add(p.district); }); return Array.from(s).sort(); }, [projects]);
+
+  // ── Filtered results ─────────────────────────────────────────────────────
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return projects.filter((p) => {
+      if (filters.categories.size > 0 && !filters.categories.has(p.category)) return false;
+      if (filters.statuses.size > 0   && !filters.statuses.has(p.status))     return false;
+      if (filters.countries.size > 0  && (!p.country  || !filters.countries.has(p.country)))   return false;
+      if (filters.cities.size > 0     && (!p.city     || !filters.cities.has(p.city)))         return false;
+      if (filters.districts.size > 0  && (!p.district || !filters.districts.has(p.district)))  return false;
+      if (filters.capitalBuckets.size > 0) {
+        const match = Array.from(filters.capitalBuckets).some((i) => {
+          const b = CAPITAL_BUCKETS[i];
+          return p.needed_capital >= b.min && p.needed_capital < b.max;
+        });
+        if (!match) return false;
+      }
+      if (q) {
+        const serial = String(p.id).padStart(5, "0");
+        const hay = [p.title, p.short_description ?? "", serial, p.city ?? "", p.country ?? "",
+          p.district ?? "", CATEGORY_LABELS[p.category] ?? p.category, STATUS_LABELS[p.status] ?? p.status,
+        ].join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [projects, filters, search]);
+
+  // ── Filter chips ─────────────────────────────────────────────────────────
+
+  const chips = [
+    ...Array.from(filters.categories).map((v) => ({ label: `${CATEGORY_ICONS[v] ?? ""} ${CATEGORY_LABELS[v] ?? v}`, onRemove: () => setFilters((f) => ({ ...f, categories: del(f.categories, v) })) })),
+    ...Array.from(filters.statuses).map((v)    => ({ label: STATUS_LABELS[v] ?? v, onRemove: () => setFilters((f) => ({ ...f, statuses: del(f.statuses, v) })) })),
+    ...Array.from(filters.capitalBuckets).map((i) => ({ label: CAPITAL_BUCKETS[i].label, onRemove: () => setFilters((f) => ({ ...f, capitalBuckets: del(f.capitalBuckets, i) })) })),
+    ...Array.from(filters.countries).map((v)   => ({ label: `🌍 ${v}`, onRemove: () => setFilters((f) => ({ ...f, countries: del(f.countries, v) })) })),
+    ...Array.from(filters.cities).map((v)      => ({ label: `🏙️ ${v}`, onRemove: () => setFilters((f) => ({ ...f, cities: del(f.cities, v) })) })),
+    ...Array.from(filters.districts).map((v)   => ({ label: `📍 ${v}`, onRemove: () => setFilters((f) => ({ ...f, districts: del(f.districts, v) })) })),
+  ];
+
+  function del<T>(s: Set<T>, v: T): Set<T> { const n = new Set(s); n.delete(v); return n; }
+
+  // ── Status update ────────────────────────────────────────────────────────
+
+  async function handleStatusChange(projectId: number, newStatus: string) {
+    setStatusUpdating(projectId);
+    try {
+      await api.projects.updateStatus(projectId, newStatus);
+      setProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, status: newStatus as Project["status"] } : p));
+    } catch { /* silent */ }
+    finally { setStatusUpdating(null); }
+  }
+
+  const isAdmin    = user?.global_role === "ADMIN";
+  const activeCount = countFilters(filters);
+
+  if (loading || !user) return <PageSpinner />;
+
+  return (
+    <div className="min-h-screen bg-[var(--clr-bg)]">
+
+      {/* Sticky search */}
+      <SearchBar
+        value={search}
+        onChange={setSearch}
+        placeholder="Projekt suchen — nach Name, #00042, Stadt, Kategorie …"
+      />
+
+      <div className="mx-auto max-w-screen-2xl px-5 py-8 sm:px-8">
+
+        {/* Top bar */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl font-semibold text-[var(--clr-text)]">Dashboard</h1>
+            <p className="mt-0.5 text-sm text-[var(--clr-text-2)]">Willkommen, {user.full_name || user.email}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Link href="/management" className="flex items-center gap-1.5 rounded-lg border border-[var(--clr-danger-dim)] bg-[var(--clr-danger-dim)] px-4 py-2 text-sm font-semibold text-[var(--clr-danger)] transition hover:bg-red-100 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400">
+                🛡️ Admin-Bereich
+              </Link>
+            )}
+            <Link href="/projects/create" className="rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-mid active:scale-95">
+              + Neues Projekt
+            </Link>
+          </div>
+        </div>
+
+        {/* Mobile filter toggle */}
+        <button
+          className="mb-4 flex items-center gap-2 rounded-lg border border-line bg-surface px-4 py-2 text-sm font-medium text-[var(--clr-text-2)] transition hover:border-brand/30 hover:text-[var(--clr-text)] lg:hidden"
+          style={{ boxShadow: "var(--sh-xs)" }}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M3 10h12M3 16h6" /></svg>
+          Filter
+          {activeCount > 0 && <span className="rounded-pill bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">{activeCount}</span>}
+        </button>
+
+        <div className="flex gap-6">
+          {/* Sidebar */}
+          <div className={`${sidebarOpen ? "block" : "hidden"} lg:block`}>
+            <ProjectFilters
+              filters={filters}
+              onChange={setFilters}
+              availableCategories={availableCategories}
+              availableStatuses={availableStatuses}
+              availableCountries={availableCountries}
+              availableCities={availableCities}
+              availableDistricts={availableDistricts}
+            />
+          </div>
+
+          {/* Main */}
+          <div className="min-w-0 flex-1">
+            <div className="mb-4">
+              <FilterChips count={filtered.length} chips={chips} onClearAll={() => setFilters(emptyFilters())} />
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-line bg-surface py-16">
+                <span className="mb-3 text-4xl">🔍</span>
+                <p className="font-medium text-[var(--clr-text-2)]">Keine Projekte gefunden</p>
+                <button onClick={() => setFilters(emptyFilters())} className="mt-3 text-sm text-brand hover:underline">
+                  Filter zurücksetzen
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {filtered.map((p) => (
+                  <ProjectCard
+                    key={p.id}
+                    project={p}
+                    isAdmin={isAdmin}
+                    statusUpdating={statusUpdating === p.id}
+                    onStatusChange={handleStatusChange}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

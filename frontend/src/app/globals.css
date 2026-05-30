@@ -2,7 +2,93 @@
 @tailwind components;
 @tailwind utilities;
 
-html.dark body {
-  background-color: #111827;
-  color: #f9fafb;
+@layer base {
+  :root {
+    /* ── Layout Tokens – rem-basiert, zoom-adaptiv ─────────── */
+    --header-h:   4rem;
+    --sidebar-w:  15rem;
+
+    /* ── Markenfarben ───────────────────────────────────────── */
+    --clr-brand:      #065F46;
+    --clr-brand-mid:  #047857;
+    --clr-brand-dim:  #D1FAE5;
+    --clr-accent:     #B45309;
+    --clr-accent-mid: #92400E;
+    --clr-accent-dim: #FEF3C7;
+
+    /* ── Semantische Farben ──────────────────────────────────── */
+    --clr-ok:         #059669;
+    --clr-ok-dim:     #D1FAE5;
+    --clr-warn:       #CA8A04;
+    --clr-warn-dim:   #FEF9C3;
+    --clr-danger:     #DC2626;
+    --clr-danger-dim: #FEE2E2;
+    --clr-info:       #2563EB;
+    --clr-info-dim:   #DBEAFE;
+
+    /* ── Oberflächen (hell) ──────────────────────────────────── */
+    --clr-bg:        #F8F5EF;
+    --clr-surface:   #FFFFFF;
+    --clr-surface-2: #F0EBE1;
+
+    /* ── Linien (hell) ───────────────────────────────────────── */
+    --clr-line:      #E3D9CB;
+    --clr-line-mid:  #C9BDA9;
+
+    /* ── Text (hell) ─────────────────────────────────────────── */
+    --clr-text:   #1A1714;
+    --clr-text-2: #6B6157;
+    --clr-text-3: #A49A91;
+
+    /* ── Schatten ────────────────────────────────────────────── */
+    --sh-xs: 0 1px 2px rgba(26,23,20,.05);
+    --sh-sm: 0 1px 3px rgba(26,23,20,.07), 0 1px 2px rgba(26,23,20,.04);
+    --sh-md: 0 4px 8px -1px rgba(26,23,20,.09), 0 2px 4px -2px rgba(26,23,20,.05);
+    --sh-lg: 0 12px 24px -4px rgba(26,23,20,.1), 0 4px 8px -4px rgba(26,23,20,.05);
+  }
+
+  .dark {
+    --clr-bg:        #0D1117;
+    --clr-surface:   #161D2B;
+    --clr-surface-2: #1D2638;
+
+    --clr-line:      #252E42;
+    --clr-line-mid:  #2F3C55;
+
+    --clr-text:   #EDE7DE;
+    --clr-text-2: #9BA4B5;
+    --clr-text-3: #596374;
+
+    --sh-xs: 0 1px 2px rgba(0,0,0,.35);
+    --sh-sm: 0 1px 3px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.03);
+    --sh-md: 0 4px 8px -1px rgba(0,0,0,.5), 0 2px 4px -2px rgba(0,0,0,.3);
+    --sh-lg: 0 12px 24px -4px rgba(0,0,0,.6), 0 4px 8px -4px rgba(0,0,0,.35);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--clr-bg);
+  color: var(--clr-text);
+  font-family: var(--font-sans, system-ui, "Helvetica Neue", sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Gepunkteter Hintergrund für Auth-Seiten */
+.auth-bg {
+  background-color: var(--clr-bg);
+  background-image: radial-gradient(var(--clr-line-mid) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Fokusring */
+:focus-visible {
+  outline: 2px solid var(--clr-brand);
+  outline-offset: 2px;
 }

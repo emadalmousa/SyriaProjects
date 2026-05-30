@@ -6,6 +6,10 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import type { User } from "@/types";
 
+const AVATAR_COLORS = [
+  "bg-emerald-600","bg-violet-600","bg-amber-600","bg-rose-600","bg-sky-600","bg-teal-600",
+];
+
 export default function Header() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -13,7 +17,10 @@ export default function Header() {
 
   useEffect(() => {
     api.users.me().then((u) => setUser(u as User)).catch(() => {});
-    setDark(document.documentElement.classList.contains("dark"));
+    const stored = localStorage.getItem("theme");
+    const isDark = stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    if (isDark) document.documentElement.classList.add("dark");
+    setDark(isDark);
   }, []);
 
   function toggleDark() {
@@ -27,48 +34,82 @@ export default function Header() {
     router.push("/login");
   }
 
+  const initials = user
+    ? [user.first_name, user.last_name].filter(Boolean).map((n) => n![0].toUpperCase()).join("") || user.email[0].toUpperCase()
+    : "";
+  const avatarColor = user ? AVATAR_COLORS[user.id % AVATAR_COLORS.length] : "bg-brand";
+
   return (
-    <header className="sticky top-0 z-50 border-b bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/dashboard" className="text-lg font-bold text-blue-600">
-          SyriaProjects
+    <header
+      className="z-50 shrink-0 border-b border-line bg-surface/95 backdrop-blur-sm"
+      style={{ height: "var(--header-h)", boxShadow: "var(--sh-sm)" }}
+    >
+      <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between px-5 sm:px-8">
+
+        {/* Brand */}
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2.5 select-none"
+        >
+          <span
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white font-display text-sm font-bold"
+            aria-hidden
+          >
+            S
+          </span>
+          <span className="hidden sm:block font-display text-base font-semibold text-[var(--clr-text)]">
+            Syria<span className="text-brand">Projects</span>
+          </span>
         </Link>
 
-        <div className="flex items-center gap-3">
+        {/* Right controls */}
+        <div className="flex items-center gap-2">
           {user && (
             <>
+              {/* Avatar link */}
               <Link
                 href="/profile"
-                className="group relative flex items-center justify-center"
                 title="Profil bearbeiten"
+                className="group relative flex items-center justify-center rounded-full ring-2 ring-transparent hover:ring-brand/40 transition-all"
               >
                 {user.avatar_url ? (
-                  <img src={user.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-transparent group-hover:ring-blue-400 transition" />
+                  <img
+                    src={user.avatar_url}
+                    alt=""
+                    className="h-9 w-9 rounded-full object-cover"
+                  />
                 ) : (
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white transition ring-2 ring-transparent group-hover:ring-blue-400 ${
-                    ["bg-blue-500","bg-violet-500","bg-emerald-500","bg-amber-500","bg-rose-500","bg-cyan-500"][user.id % 6]
-                  }`}>
-                    {[user.first_name, user.last_name].filter(Boolean).map((n) => n![0].toUpperCase()).join("") || user.email[0].toUpperCase()}
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white ${avatarColor}`}>
+                    {initials}
                   </div>
                 )}
-                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition pointer-events-none">
-                  Profil bearbeiten
-                </span>
               </Link>
+
+              {/* Logout */}
               <button
                 onClick={logout}
-                className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400"
+                className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[var(--clr-danger-dim)] bg-[var(--clr-danger-dim)] px-3.5 py-1.5 text-xs font-semibold text-[var(--clr-danger)] transition hover:bg-red-100 dark:border-red-800/50 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
               >
                 Abmelden
               </button>
             </>
           )}
+
+          {/* Dark-mode toggle */}
           <button
             onClick={toggleDark}
-            className="rounded-lg border border-gray-300 p-2 text-sm hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800"
-            title="Dark Mode umschalten"
+            aria-label="Dark Mode umschalten"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface-2 text-[var(--clr-text-2)] transition hover:border-brand/30 hover:text-brand dark:bg-surface dark:border-line"
           >
-            {dark ? "☀️" : "🌙"}
+            {dark ? (
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m8.66-9H21M3 12H2.34M18.36 5.64l-.71.71M6.34 17.66l-.71.71M18.36 18.36l-.71-.71M6.34 6.34l-.71-.71M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" />
+              </svg>
+            ) : (
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
+              </svg>
+            )}
           </button>
         </div>
       </div>

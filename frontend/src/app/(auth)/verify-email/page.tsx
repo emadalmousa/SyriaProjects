@@ -8,61 +8,55 @@ import { api } from "@/lib/api";
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus]   = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setMessage("Kein Bestätigungstoken gefunden.");
-      return;
-    }
-    api.auth
-      .verifyEmail(token)
-      .then((data) => {
-        setMessage(data.message || "E-Mail-Adresse erfolgreich bestätigt.");
-        setStatus("success");
-      })
-      .catch((err: unknown) => {
-        setMessage(err instanceof Error ? err.message : "Bestätigung fehlgeschlagen.");
-        setStatus("error");
-      });
+    if (!token) { setStatus("error"); setMessage("Kein Bestätigungstoken gefunden."); return; }
+    api.auth.verifyEmail(token)
+      .then((data) => { setMessage(data.message || "E-Mail-Adresse erfolgreich bestätigt."); setStatus("success"); })
+      .catch((err: unknown) => { setMessage(err instanceof Error ? err.message : "Bestätigung fehlgeschlagen."); setStatus("error"); });
   }, [token]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md rounded-2xl border bg-white p-8 shadow-sm">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">E-Mail-Bestätigung</h1>
-        </div>
+    <main className="auth-bg flex min-h-screen items-center justify-center px-4">
+      <div className="w-full max-w-md rounded-card border border-line bg-surface p-8 text-center" style={{ boxShadow: "var(--sh-lg)" }}>
+
+        <span className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-card bg-brand font-display text-xl font-bold text-white">S</span>
+        <h1 className="mb-6 font-display text-2xl font-semibold text-[var(--clr-text)]">E-Mail-Bestätigung</h1>
 
         {status === "loading" && (
-          <p className="text-center text-sm text-gray-500">E-Mail wird bestätigt...</p>
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-brand border-t-transparent" />
+            <p className="text-sm text-[var(--clr-text-2)]">E-Mail wird bestätigt…</p>
+          </div>
         )}
 
         {status === "success" && (
           <>
-            <div className="mb-6 rounded-lg bg-green-50 p-4 text-sm text-green-700">
-              E-Mail-Adresse erfolgreich bestätigt! Du kannst dich jetzt anmelden.
+            <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--clr-ok-dim)]">
+              <svg className="h-7 w-7 text-[var(--clr-ok)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-            <p className="text-center text-sm text-gray-500">
-              <Link href="/login" className="font-medium text-blue-600 hover:underline">
-                Zur Anmeldeseite
-              </Link>
-            </p>
+            <p className="mb-6 text-sm text-[var(--clr-text-2)]">E-Mail erfolgreich bestätigt! Du kannst dich jetzt anmelden.</p>
+            <Link href="/login" className="inline-block rounded-lg bg-brand px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-mid">
+              Zur Anmeldung
+            </Link>
           </>
         )}
 
         {status === "error" && (
           <>
-            <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-600">
-              {message}
+            <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--clr-danger-dim)]">
+              <svg className="h-7 w-7 text-[var(--clr-danger)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </div>
-            <p className="text-center text-sm text-gray-500">
-              <Link href="/login" className="font-medium text-blue-600 hover:underline">
-                Zur Anmeldeseite
-              </Link>
-            </p>
+            <p className="mb-6 text-sm text-[var(--clr-danger)]">{message}</p>
+            <Link href="/login" className="inline-block rounded-lg border border-line bg-surface-2 px-6 py-2.5 text-sm font-semibold text-[var(--clr-text-2)] transition hover:text-[var(--clr-text)]">
+              Zur Anmeldung
+            </Link>
           </>
         )}
       </div>
@@ -72,7 +66,7 @@ function VerifyEmailContent() {
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-gray-50"><p className="text-sm text-gray-500">Laden...</p></div>}>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-[3px] border-brand border-t-transparent" /></div>}>
       <VerifyEmailContent />
     </Suspense>
   );
