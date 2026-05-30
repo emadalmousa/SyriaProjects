@@ -64,6 +64,8 @@ export default function ManagementPage() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [updating, setUpdating] = useState<number | null>(null);
   const [confirmBlock, setConfirmBlock] = useState<User | null>(null);
+  const [testDataStatus, setTestDataStatus] = useState<{ exists: boolean; users: number; projects: number } | null>(null);
+  const [testDataLoading, setTestDataLoading] = useState(false);
 
   useEffect(() => {
     api.users.me()
@@ -71,12 +73,36 @@ export default function ManagementPage() {
         const me = u as User;
         if (me.global_role !== "ADMIN") { router.push("/dashboard"); return; }
         setMe(me);
-        return api.users.list();
+        return Promise.all([api.users.list(), api.admin.testDataStatus()]);
       })
-      .then((u) => u && setUsers(u as User[]))
+      .then((results) => {
+        if (!results) return;
+        const [userList, tdStatus] = results as [User[], { exists: boolean; users: number; projects: number }];
+        setUsers(userList);
+        setTestDataStatus(tdStatus);
+      })
       .catch(() => router.push("/login"))
       .finally(() => setLoading(false));
   }, [router]);
+
+  async function handleTestData() {
+    if (!testDataStatus) return;
+    setTestDataLoading(true);
+    try {
+      if (testDataStatus.exists) {
+        await api.admin.deleteTestData();
+        setUsers((prev) => prev.filter((u) => !(u as User & { is_test_data?: boolean }).is_test_data));
+        setTestDataStatus({ exists: false, users: 0, projects: 0 });
+      } else {
+        const result = await api.admin.seedTestData() as { status: string; users: number; projects: number };
+        setTestDataStatus({ exists: true, users: result.users, projects: result.projects });
+        const updatedUsers = await api.users.list() as User[];
+        setUsers(updatedUsers);
+      }
+    } finally {
+      setTestDataLoading(false);
+    }
+  }
 
   async function handleRoleChange(userId: number, role: string) {
     setUpdating(userId);
@@ -154,9 +180,45 @@ export default function ManagementPage() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin-Bereich</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Nutzerverwaltung & Plattformkontrolle</p>
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin-Bereich</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Nutzerverwaltung & Plattformkontrolle</p>
+          </div>
+          {testDataStatus !== null && (
+            <div className="flex flex-col items-end gap-1">
+              <button
+                onClick={handleTestData}
+                disabled={testDataLoading}
+                className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition disabled:opacity-50
+                  ${testDataStatus.exists
+                    ? "border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+                    : "border border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                  }`}
+              >
+                {testDataLoading ? (
+                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                ) : testDataStatus.exists ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                )}
+                {testDataLoading
+                  ? "Wird ausgeführt…"
+                  : testDataStatus.exists
+                    ? "Testdaten löschen"
+                    : "Testdaten hinzufügen"}
+              </button>
+              {testDataStatus.exists && (
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  {testDataStatus.users} Testnutzer · {testDataStatus.projects} Testprojekte
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Stats */}

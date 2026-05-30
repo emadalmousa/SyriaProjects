@@ -77,7 +77,7 @@ def _add_member(db, project_id: int, user_id: int, role: ProjectRole):
 def seed():
     db = SessionLocal()
     try:
-        if db.query(User).filter(User.email == "ahmad.halabi@syriaprojects.sy").first():
+        if db.query(User).filter(User.is_test_data == True).first():  # noqa: E712
             print("Demo seed data already exists — skipping.")
             return
 
@@ -104,6 +104,8 @@ def seed():
             phone="+963 21 345 6789",
             country="Syria",
             user_type=UserType.PROJECT_SUBMITTER,
+            is_test_data=True,
+            email_verified=True,
         )
         u2 = User(
             email="fatima.dimashqi@syriaprojects.sy",
@@ -113,6 +115,8 @@ def seed():
             phone="+963 11 456 7890",
             country="Syria",
             user_type=UserType.INVESTOR,
+            is_test_data=True,
+            email_verified=True,
         )
         u3 = User(
             email="omar.homsi@syriaprojects.sy",
@@ -122,6 +126,8 @@ def seed():
             phone="+963 31 567 8901",
             country="Syria",
             user_type=UserType.PROJECT_SUBMITTER,
+            is_test_data=True,
+            email_verified=True,
         )
         u4 = User(
             email="nour.tartusi@syriaprojects.sy",
@@ -131,6 +137,8 @@ def seed():
             phone="+963 43 678 9012",
             country="Syria",
             user_type=UserType.PARTNER,
+            is_test_data=True,
+            email_verified=True,
         )
         u5 = User(
             email="rania.hasakawi@syriaprojects.sy",
@@ -140,6 +148,8 @@ def seed():
             phone="+963 52 789 0123",
             country="Syria",
             user_type=UserType.PROJECT_SUBMITTER,
+            is_test_data=True,
+            email_verified=True,
         )
         u6 = User(
             email="khalid.deiri@syriaprojects.sy",
@@ -149,6 +159,8 @@ def seed():
             phone="+963 51 890 1234",
             country="Syria",
             user_type=UserType.INVESTOR,
+            is_test_data=True,
+            email_verified=True,
         )
         u7 = User(
             email="samira.latakiyya@syriaprojects.sy",
@@ -158,6 +170,8 @@ def seed():
             phone="+963 41 901 2345",
             country="Syria",
             user_type=UserType.PROJECT_SUBMITTER,
+            is_test_data=True,
+            email_verified=True,
         )
         u8 = User(
             email="youssef.hamawi@syriaprojects.sy",
@@ -167,6 +181,8 @@ def seed():
             phone="+963 33 012 3456",
             country="Syria",
             user_type=UserType.PROJECT_SUBMITTER,
+            is_test_data=True,
+            email_verified=True,
         )
         u9 = User(
             email="laila.qunaytra@syriaprojects.sy",
@@ -176,6 +192,8 @@ def seed():
             phone="+963 14 123 4567",
             country="Germany",
             user_type=UserType.INVESTOR,
+            is_test_data=True,
+            email_verified=True,
         )
 
         users = [admin, u1, u2, u3, u4, u5, u6, u7, u8, u9]
@@ -214,7 +232,7 @@ def seed():
             status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.VERIFIED,
-            risk_level=RiskLevel.LOW,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p1)
         db.flush()
@@ -268,7 +286,7 @@ def seed():
             status=ProjectStatus.APPROVED,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.VERIFIED,
-            risk_level=RiskLevel.LOW,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p2)
         db.flush()
@@ -319,7 +337,7 @@ def seed():
             status=ProjectStatus.FUNDED,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.VERIFIED,
-            risk_level=RiskLevel.MEDIUM,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p3)
         db.flush()
@@ -370,7 +388,7 @@ def seed():
             status=ProjectStatus.UNDER_REVIEW,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.IN_REVIEW,
-            risk_level=RiskLevel.MEDIUM,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p4)
         db.flush()
@@ -417,7 +435,7 @@ def seed():
             status=ProjectStatus.DRAFT,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.NOT_CHECKED,
-            risk_level=RiskLevel.MEDIUM,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p5)
         db.flush()
@@ -465,7 +483,7 @@ def seed():
             status=ProjectStatus.APPROVED,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.VERIFIED,
-            risk_level=RiskLevel.LOW,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p6)
         db.flush()
@@ -516,7 +534,7 @@ def seed():
             status=ProjectStatus.FUNDED,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.VERIFIED,
-            risk_level=RiskLevel.LOW,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p7)
         db.flush()
@@ -568,7 +586,7 @@ def seed():
             status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.VERIFIED,
-            risk_level=RiskLevel.MEDIUM,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p8)
         db.flush()
@@ -617,7 +635,7 @@ def seed():
             status=ProjectStatus.INTEREST_RECEIVED,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.IN_REVIEW,
-            risk_level=RiskLevel.MEDIUM,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p9)
         db.flush()
@@ -663,7 +681,7 @@ def seed():
             status=ProjectStatus.DRAFT,
             visibility=ProjectVisibility.PRIVATE,
             verification_status=VerificationStatus.NOT_CHECKED,
-            risk_level=RiskLevel.LOW,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p10)
         db.flush()
@@ -704,7 +722,7 @@ def seed():
             status=ProjectStatus.APPROVED,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.VERIFIED,
-            risk_level=RiskLevel.LOW,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p11)
         db.flush()
@@ -747,7 +765,7 @@ def seed():
             status=ProjectStatus.UNDER_REVIEW,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.IN_REVIEW,
-            risk_level=RiskLevel.LOW,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p12)
         db.flush()
@@ -788,7 +806,7 @@ def seed():
             status=ProjectStatus.DRAFT,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.NOT_CHECKED,
-            risk_level=RiskLevel.MEDIUM,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p13)
         db.flush()
@@ -832,7 +850,7 @@ def seed():
             status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.VERIFIED,
-            risk_level=RiskLevel.MEDIUM,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p14)
         db.flush()
@@ -877,7 +895,7 @@ def seed():
             status=ProjectStatus.DRAFT,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.NOT_CHECKED,
-            risk_level=RiskLevel.HIGH,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p15)
         db.flush()
@@ -919,7 +937,7 @@ def seed():
             status=ProjectStatus.APPROVED,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.VERIFIED,
-            risk_level=RiskLevel.LOW,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p16)
         db.flush()
@@ -959,7 +977,7 @@ def seed():
             status=ProjectStatus.FUNDED,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.VERIFIED,
-            risk_level=RiskLevel.LOW,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p17)
         db.flush()
@@ -1007,7 +1025,7 @@ def seed():
             status=ProjectStatus.UNDER_REVIEW,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.IN_REVIEW,
-            risk_level=RiskLevel.MEDIUM,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p18)
         db.flush()
@@ -1048,7 +1066,7 @@ def seed():
             status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.VERIFIED,
-            risk_level=RiskLevel.LOW,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p19)
         db.flush()
@@ -1094,7 +1112,7 @@ def seed():
             status=ProjectStatus.INTEREST_RECEIVED,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.IN_REVIEW,
-            risk_level=RiskLevel.MEDIUM,
+            risk_level=RiskLevel.\1,\n            is_test_data=True,
         )
         db.add(p20)
         db.flush()

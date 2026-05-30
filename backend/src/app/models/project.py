@@ -144,6 +144,7 @@ class Project(Base):
     video_url = Column(Text)
     admin_note = Column(Text)
     rejection_reason = Column(Text)
+    is_test_data = Column(Boolean, default=False, nullable=False)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

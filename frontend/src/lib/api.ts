@@ -48,6 +48,11 @@ export const api = {
     toggleActive: (userId: number) =>
       request(`/users/${userId}/active`, { method: "PATCH" }),
   },
+  admin: {
+    testDataStatus: () => request<{ exists: boolean; users: number; projects: number }>("/admin/test-data/status"),
+    seedTestData: () => request<{ status: string; users: number; projects: number }>("/admin/test-data/seed", { method: "POST" }),
+    deleteTestData: () => request<{ status: string; users_deleted: number; projects_deleted: number }>("/admin/test-data", { method: "DELETE" }),
+  },
   projects: {
     listPublic: () => request("/projects/public"),
     list: () => request("/projects/"),

@@ -6,6 +6,7 @@ from fastapi.responses import Response
 
 from app.core.config import settings
 from app.routers import auth, projects, uploads, users
+from app.routers import admin
 
 app = FastAPI(title="Project Platform API", version="0.1.0")
 
@@ -43,6 +44,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(projects.router)
 app.include_router(uploads.router)
+app.include_router(admin.router)
 
 
 @app.get("/health")
@@ -60,3 +62,13 @@ def reset_db(secret: str):
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     return {"status": "db reset done"}
+
+
+@app.post("/admin/seed-demo")
+def seed_demo(secret: str):
+    if secret != settings.secret_key:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Forbidden")
+    from app.seed_demo import seed
+    seed()
+    return {"status": "demo data seeded"}
