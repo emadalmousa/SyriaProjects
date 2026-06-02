@@ -38,5 +38,21 @@
   },
   "confirmBlockTitle": "Nutzer blockieren?",
   "confirmBlockBody": "{name} kann sich nach dem Blockieren nicht mehr einloggen.",
-  "confirmBlock": "Blockieren"
+  "confirmBlock": "Blockieren",
+  "taskKindProject": "Neues Projekt prüfen",
+  "taskKindInterest": "Teilnahme-Anfrage prüfen",
+  "taskKindRequest": "Weitere Anfrage",
+  "history": "Verlauf",
+  "colDecidedAt": "Entschieden am",
+  "colRequester": "Antragsteller",
+  "colProject": "Projekt",
+  "colAmount": "Betrag",
+  "colResult": "Ergebnis",
+  "reopen": "Wieder öffnen",
+  "noHistory": "Keine bearbeiteten Aufgaben",
+  "historyProjects": "Bearbeitete Projekte",
+  "historyInterests": "Bearbeitete Beitrittsanfragen",
+  "historyRequests": "Bearbeitete Anträge",
+  "resultApproved": "Genehmigt",
+  "resultRejected": "Abgelehnt"
 }

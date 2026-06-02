@@ -92,15 +92,7 @@ export default function RegisterPage() {
         </div>
 
         <label className="flex cursor-pointer items-start gap-3 text-sm text-[var(--clr-text-2)]">
-          <span
-            className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition
-              ${form.terms ? "border-brand bg-brand" : "border-line-mid bg-surface"}`}
-            onClick={() => set("terms", !form.terms)}
-            aria-hidden
-          >
-            {form.terms && <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-          </span>
-          <input type="checkbox" checked={form.terms} onChange={(e) => set("terms", e.target.checked)} className="sr-only" />
+          <input type="checkbox" checked={form.terms} onChange={(e) => set("terms", e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[var(--clr-brand)]" />
           <span>{t("terms")}</span>
         </label>
 

@@ -191,6 +191,48 @@ export interface AdminTasks {
   pending_requests: AdminRequest[];
 }
 
+export interface HistoryProject {
+  id: number;
+  title: string;
+  short_description?: string;
+  city?: string;
+  status: string;
+  creator?: string;
+  created_at: string;
+  decided_at: string;
+}
+
+export interface HistoryInterest {
+  id: number;
+  project_id: number;
+  project_title?: string;
+  user_name?: string;
+  user_email?: string;
+  amount?: number;
+  status: string;
+  created_at: string;
+  decided_at: string;
+}
+
+export interface HistoryRequest {
+  id: number;
+  type: RequestType;
+  status: RequestStatus;
+  requester_name?: string;
+  project_id?: number;
+  project_title?: string;
+  payload?: string;
+  admin_note?: string;
+  created_at: string;
+  decided_at: string;
+}
+
+export interface AdminHistory {
+  reviewed_projects: HistoryProject[];
+  reviewed_interests: HistoryInterest[];
+  reviewed_requests: HistoryRequest[];
+}
+
 export interface UserInterest {
   id: number;
   project_id: number;

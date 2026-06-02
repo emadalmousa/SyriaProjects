@@ -7,7 +7,7 @@ from app.core.config import settings
 
 class EmailService:
     def send_verification_email(self, email: str, token: str) -> None:
-        link = f"{settings.frontend_url}/verify-email?token={token}"
+        link = f"{settings.frontend_url}/{settings.frontend_default_locale}/verify-email?token={token}"
         subject = "E-Mail-Adresse bestätigen – SyriaProjects"
         html = f"""
         <p>Willkommen bei SyriaProjects!</p>
@@ -18,7 +18,7 @@ class EmailService:
         self._send(email, subject, html)
 
     def send_password_reset_email(self, email: str, token: str) -> None:
-        link = f"{settings.frontend_url}/reset-password?token={token}"
+        link = f"{settings.frontend_url}/{settings.frontend_default_locale}/reset-password?token={token}"
         subject = "Passwort zurücksetzen – SyriaProjects"
         html = f"""
         <p>Du hast eine Anfrage zum Zurücksetzen deines Passworts gesendet.</p>

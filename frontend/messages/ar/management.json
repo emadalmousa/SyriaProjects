@@ -38,5 +38,21 @@
   },
   "confirmBlockTitle": "حظر المستخدم؟",
   "confirmBlockBody": "لن يتمكن {name} من تسجيل الدخول بعد الحظر.",
-  "confirmBlock": "حظر"
+  "confirmBlock": "حظر",
+  "taskKindProject": "مراجعة مشروع جديد",
+  "taskKindInterest": "مراجعة طلب انضمام",
+  "taskKindRequest": "طلب إضافي",
+  "history": "السجل",
+  "colDecidedAt": "تاريخ القرار",
+  "colRequester": "مقدّم الطلب",
+  "colProject": "المشروع",
+  "colAmount": "المبلغ",
+  "colResult": "النتيجة",
+  "reopen": "إعادة فتح",
+  "noHistory": "لا توجد مهام منجزة",
+  "historyProjects": "المشاريع المعالجة",
+  "historyInterests": "طلبات الانضمام المعالجة",
+  "historyRequests": "الطلبات المعالجة",
+  "resultApproved": "مقبول",
+  "resultRejected": "مرفوض"
 }

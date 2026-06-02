@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     # URLs
     frontend_url: str = "http://localhost:3000"
+    frontend_default_locale: str = "de"
 
     # Token expiry
     email_verification_expire_hours: int = 24

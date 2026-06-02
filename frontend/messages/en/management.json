@@ -38,5 +38,21 @@
   },
   "confirmBlockTitle": "Block user?",
   "confirmBlockBody": "{name} will no longer be able to log in after being blocked.",
-  "confirmBlock": "Block"
+  "confirmBlock": "Block",
+  "taskKindProject": "Review new project",
+  "taskKindInterest": "Review join request",
+  "taskKindRequest": "Further request",
+  "history": "History",
+  "colDecidedAt": "Decided on",
+  "colRequester": "Requester",
+  "colProject": "Project",
+  "colAmount": "Amount",
+  "colResult": "Result",
+  "reopen": "Reopen",
+  "noHistory": "No completed tasks",
+  "historyProjects": "Reviewed projects",
+  "historyInterests": "Reviewed join requests",
+  "historyRequests": "Reviewed requests",
+  "resultApproved": "Approved",
+  "resultRejected": "Rejected"
 }

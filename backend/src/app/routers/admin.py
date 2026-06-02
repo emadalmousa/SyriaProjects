@@ -328,6 +328,120 @@ def reject_request(
     return {"message": "Anfrage abgelehnt"}
 
 
+@router.get("/history")
+def get_admin_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    reviewed_projects = (
+        db.query(Project)
+        .filter(Project.status.in_([ProjectStatus.ACTIVE, ProjectStatus.REJECTED]))
+        .order_by(Project.updated_at.desc())
+        .limit(100)
+        .all()
+    )
+    reviewed_interests = (
+        db.query(ProjectInterest)
+        .filter(ProjectInterest.status.in_([InterestStatus.ACCEPTED, InterestStatus.REJECTED]))
+        .order_by(ProjectInterest.updated_at.desc())
+        .limit(100)
+        .all()
+    )
+    reviewed_requests = (
+        db.query(AdminRequest)
+        .filter(AdminRequest.status.in_([AdminReqStatus.ACCEPTED, AdminReqStatus.REJECTED]))
+        .order_by(AdminRequest.updated_at.desc())
+        .limit(100)
+        .all()
+    )
+    return {
+        "reviewed_projects": [
+            {
+                "id": p.id,
+                "title": p.title,
+                "short_description": p.short_description,
+                "city": p.city,
+                "status": p.status,
+                "creator": db.get(User, p.created_by_user_id).full_name if p.created_by_user_id else None,
+                "created_at": p.created_at.isoformat(),
+                "decided_at": p.updated_at.isoformat() if p.updated_at else p.created_at.isoformat(),
+            }
+            for p in reviewed_projects
+        ],
+        "reviewed_interests": [
+            {
+                "id": i.id,
+                "project_id": i.project_id,
+                "project_title": db.get(Project, i.project_id).title if i.project_id else None,
+                "user_name": db.get(User, i.user_id).full_name if i.user_id else None,
+                "user_email": db.get(User, i.user_id).email if i.user_id else None,
+                "amount": float(i.amount) if i.amount else None,
+                "status": i.status,
+                "created_at": i.created_at.isoformat(),
+                "decided_at": i.updated_at.isoformat() if i.updated_at else i.created_at.isoformat(),
+            }
+            for i in reviewed_interests
+        ],
+        "reviewed_requests": [
+            {
+                "id": r.id,
+                "type": r.type,
+                "status": r.status,
+                "requester_name": db.get(User, r.requester_id).full_name if r.requester_id else None,
+                "project_id": r.project_id,
+                "project_title": db.get(Project, r.project_id).title if r.project_id else None,
+                "payload": r.payload,
+                "admin_note": r.admin_note,
+                "created_at": r.created_at.isoformat(),
+                "decided_at": r.updated_at.isoformat() if r.updated_at else r.created_at.isoformat(),
+            }
+            for r in reviewed_requests
+        ],
+    }
+
+
+@router.post("/projects/{project_id}/reopen")
+def reopen_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    project = db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    project.status = ProjectStatus.IDEA
+    db.commit()
+    return {"message": "Projekt wieder geöffnet", "status": "IDEA"}
+
+
+@router.post("/interests/{interest_id}/reopen")
+def reopen_interest(
+    interest_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    interest = db.get(ProjectInterest, interest_id)
+    if not interest:
+        raise HTTPException(status_code=404, detail="Anfrage nicht gefunden")
+    interest.status = InterestStatus.PENDING
+    db.commit()
+    return {"message": "Beitrittsanfrage wieder geöffnet"}
+
+
+@router.post("/requests/{request_id}/reopen")
+def reopen_request(
+    request_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    req = db.get(AdminRequest, request_id)
+    if not req:
+        raise HTTPException(status_code=404, detail="Anfrage nicht gefunden")
+    req.status = AdminReqStatus.PENDING
+    db.commit()
+    return {"message": "Anfrage wieder geöffnet"}
+
+
 @router.get("/notifications")
 def get_notifications(
     unread_only: bool = False,

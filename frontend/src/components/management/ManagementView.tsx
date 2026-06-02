@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
-import type { User, AdminTasks, SystemNotification, AdminRequest } from "@/types";
+import type { User, AdminTasks, SystemNotification, AdminRequest, AdminHistory, HistoryProject, HistoryInterest, HistoryRequest } from "@/types";
 
 import { PageSpinner } from "@/components/ui";
 import { StatCard, ConfirmDialog, UserTable } from "@/components/management";
@@ -25,10 +25,12 @@ export function ManagementView() {
   const [testDataStatus, setTestDataStatus] = useState<{ exists: boolean; users: number; projects: number } | null>(null);
   const [testDataLoading, setTestDataLoading] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"tasks" | "notifications" | "users">("tasks");
+  const [activeTab, setActiveTab] = useState<"tasks" | "history" | "notifications" | "users">("tasks");
   const [tasks, setTasks] = useState<AdminTasks | null>(null);
+  const [history, setHistory] = useState<AdminHistory | null>(null);
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   const [taskLoading, setTaskLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
 
   useEffect(() => {
@@ -47,10 +49,10 @@ export function ManagementView() {
       .catch(() => router.push("/login"))
       .finally(() => setLoading(false));
 
-    // Load tasks
     setTaskLoading(true);
     api.admin.tasks().then((data) => setTasks(data as AdminTasks)).finally(() => setTaskLoading(false));
-    // Load notifications
+    setHistoryLoading(true);
+    api.admin.history().then((data) => setHistory(data as AdminHistory)).finally(() => setHistoryLoading(false));
     setNotifLoading(true);
     api.admin.notifications().then((data) => setNotifications(data as SystemNotification[])).finally(() => setNotifLoading(false));
   }, [router]);
@@ -109,6 +111,9 @@ export function ManagementView() {
   const taskCount = tasks
     ? tasks.idea_projects.length + tasks.pending_interests.length + (tasks.pending_requests?.length || 0)
     : 0;
+  const historyCount = history
+    ? history.reviewed_projects.length + history.reviewed_interests.length + history.reviewed_requests.length
+    : 0;
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   return (
@@ -149,7 +154,7 @@ export function ManagementView() {
 
         {/* Tab bar */}
         <div className="mb-6 flex gap-1 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface-2)] p-1 w-fit">
-          {(["tasks", "notifications", "users"] as const).map((tab) => (
+          {(["tasks", "history", "notifications", "users"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -159,10 +164,15 @@ export function ManagementView() {
                   : "text-[var(--clr-text-2)] hover:text-[var(--clr-text)]"
                 }`}
             >
-              {tab === "tasks" ? tCommon("tasks") : tab === "notifications" ? tCommon("notifications") : tCommon("users")}
+              {tab === "tasks" ? tCommon("tasks") : tab === "history" ? tCommon("history") : tab === "notifications" ? tCommon("notifications") : tCommon("users")}
               {tab === "tasks" && taskCount > 0 && (
                 <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white leading-none">
                   {taskCount}
+                </span>
+              )}
+              {tab === "history" && historyCount > 0 && (
+                <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold leading-none ${activeTab === "history" ? "bg-white/20 text-white" : "bg-[var(--clr-brand)]/10 text-[var(--clr-brand)]"}`}>
+                  {historyCount}
                 </span>
               )}
               {tab === "notifications" && unreadCount > 0 && (
@@ -174,182 +184,265 @@ export function ManagementView() {
           ))}
         </div>
 
-        {/* Tasks Tab */}
+        {/* Tasks Tab — unified table */}
         {activeTab === "tasks" && (
-          <div className="space-y-6">
+          <div>
             {taskLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="h-6 w-6 animate-spin rounded-full border-[3px] border-brand border-t-transparent" />
+              </div>
+            ) : taskCount === 0 ? (
+              <p className="text-sm text-[var(--clr-text-2)]">{tCommon("noTasks")}</p>
+            ) : (
+              <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2">
+                      <tr>
+                        <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colStatus")}</th>
+                        <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colUser")}</th>
+                        <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
+                        <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colAmount")}</th>
+                        <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colRegistered")}</th>
+                        <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+
+                      {(tasks?.idea_projects ?? []).map((proj) => (
+                        <tr key={`proj-${proj.id}`} className="hover:bg-surface-2 transition-colors">
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                              {t("taskKindProject")}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-[var(--clr-text-2)]">{proj.creator || "—"}</td>
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-[var(--clr-text)]">{proj.title}</p>
+                            {proj.short_description && <p className="text-xs text-[var(--clr-text-2)] line-clamp-1">{proj.short_description}</p>}
+                            {proj.city && <p className="text-xs text-[var(--clr-text-3)]">{proj.city}</p>}
+                          </td>
+                          <td className="px-4 py-3 text-[var(--clr-text-3)]">—</td>
+                          <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(proj.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2">
+                              <button onClick={async () => { await api.admin.approveProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button>
+                              <button onClick={async () => { await api.admin.rejectProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+
+                      {(tasks?.pending_interests ?? []).map((interest) => (
+                        <tr key={`int-${interest.id}`} className="hover:bg-surface-2 transition-colors">
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">
+                              {t("taskKindInterest")}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-[var(--clr-text)]">{interest.user_name}</p>
+                            <p className="text-xs text-[var(--clr-text-2)]">{interest.user_email}</p>
+                          </td>
+                          <td className="px-4 py-3 text-[var(--clr-text-2)]">{interest.project_title}</td>
+                          <td className="px-4 py-3 text-sm font-semibold text-[var(--clr-brand)]">{interest.amount ? `${interest.amount.toLocaleString()} €` : "—"}</td>
+                          <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(interest.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2">
+                              <button onClick={async () => { await api.admin.approveInterest(interest.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button>
+                              <button onClick={async () => { await api.admin.rejectInterest(interest.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+
+                      {(tasks?.pending_requests ?? []).map((req: AdminRequest) => {
+                        let detail = "";
+                        try {
+                          const p = req.payload ? JSON.parse(req.payload) : {};
+                          if (p.amount) detail = `${Number(p.amount).toLocaleString()} €`;
+                          else if (p.field) detail = p.value ? `${p.field} → ${p.value}` : p.field;
+                        } catch { /* ignore */ }
+                        return (
+                          <tr key={`req-${req.id}`} className="hover:bg-surface-2 transition-colors">
+                            <td className="px-4 py-3">
+                              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                {t("taskKindRequest")}
+                              </span>
+                              <p className="mt-1 text-xs text-[var(--clr-text-2)]">{tProject(`requestTypeLabel.${req.type}`)}</p>
+                            </td>
+                            <td className="px-4 py-3 text-[var(--clr-text-2)]">{req.requester_name || "—"}</td>
+                            <td className="px-4 py-3 text-[var(--clr-text-2)]">{req.project_title || "—"}</td>
+                            <td className="px-4 py-3 text-xs text-[var(--clr-brand)]">{detail || "—"}</td>
+                            <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(req.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex gap-2">
+                                <button onClick={async () => { await api.admin.approveRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button>
+                                <button onClick={async () => { await api.admin.rejectRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* History Tab */}
+        {activeTab === "history" && (
+          <div className="space-y-6">
+            {historyLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="h-6 w-6 animate-spin rounded-full border-[3px] border-brand border-t-transparent" />
               </div>
             ) : (
               <>
-                {/* Projects to review */}
+                {/* Reviewed Projects */}
                 <section>
                   <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--clr-text-2)]">
-                    {tProject("newProjectTask")}
-                    {tasks?.idea_projects.length ? ` (${tasks.idea_projects.length})` : ""}
+                    {t("historyProjects")}
+                    {history?.reviewed_projects.length ? ` (${history.reviewed_projects.length})` : ""}
                   </h3>
-                  {!tasks?.idea_projects.length ? (
-                    <p className="text-sm text-[var(--clr-text-2)]">{tCommon("noTasks")}</p>
+                  {!history?.reviewed_projects.length ? (
+                    <p className="text-sm text-[var(--clr-text-2)]">{t("noHistory")}</p>
                   ) : (
-                    <div className="space-y-3">
-                      {tasks.idea_projects.map((proj) => (
-                        <div key={proj.id} className="flex items-start justify-between gap-4 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface)] p-4">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-[var(--clr-text)]">{proj.title}</p>
-                            {proj.short_description && (
-                              <p className="mt-0.5 line-clamp-2 text-sm text-[var(--clr-text-2)]">{proj.short_description}</p>
-                            )}
-                            <p className="mt-1 text-xs text-[var(--clr-text-3)]">
-                              {proj.creator} {proj.city ? `· ${proj.city}` : ""} · {new Date(proj.created_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="flex shrink-0 gap-2">
-                            <button
-                              onClick={async () => {
-                                await api.admin.approveProject(proj.id);
-                                const updated = await api.admin.tasks();
-                                setTasks(updated as AdminTasks);
-                              }}
-                              className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
-                            >
-                              {tProject("approveProject")}
-                            </button>
-                            <button
-                              onClick={async () => {
-                                await api.admin.rejectProject(proj.id);
-                                const updated = await api.admin.tasks();
-                                setTasks(updated as AdminTasks);
-                              }}
-                              className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
-                            >
-                              {tProject("rejectProject")}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="border-b border-line bg-surface-2">
+                            <tr>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colRequester")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colResult")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colDecidedAt")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {(history?.reviewed_projects ?? []).map((proj: HistoryProject) => (
+                              <tr key={proj.id} className="hover:bg-surface-2 transition-colors">
+                                <td className="px-4 py-3">
+                                  <p className="font-medium text-[var(--clr-text)]">{proj.title}</p>
+                                  {proj.city && <p className="text-xs text-[var(--clr-text-3)]">{proj.city}</p>}
+                                </td>
+                                <td className="px-4 py-3 text-[var(--clr-text-2)]">{proj.creator || "—"}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${proj.status === "ACTIVE" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
+                                    {proj.status === "ACTIVE" ? t("resultApproved") : t("resultRejected")}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(proj.decided_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                                <td className="px-4 py-3">
+                                  <button onClick={async () => { await api.admin.reopenProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </section>
 
-                {/* Join requests to review */}
+                {/* Reviewed Interests */}
                 <section>
                   <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--clr-text-2)]">
-                    {tProject("newJoinTask")}
-                    {tasks?.pending_interests.length ? ` (${tasks.pending_interests.length})` : ""}
+                    {t("historyInterests")}
+                    {history?.reviewed_interests.length ? ` (${history.reviewed_interests.length})` : ""}
                   </h3>
-                  {!tasks?.pending_interests.length ? (
-                    <p className="text-sm text-[var(--clr-text-2)]">{tCommon("noTasks")}</p>
+                  {!history?.reviewed_interests.length ? (
+                    <p className="text-sm text-[var(--clr-text-2)]">{t("noHistory")}</p>
                   ) : (
-                    <div className="space-y-3">
-                      {tasks.pending_interests.map((interest) => (
-                        <div key={interest.id} className="flex items-start justify-between gap-4 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface)] p-4">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-[var(--clr-text)]">{interest.user_name}</p>
-                            <p className="text-sm text-[var(--clr-text-2)]">{interest.user_email}</p>
-                            <p className="mt-1 text-sm text-[var(--clr-text)]">
-                              Projekt: <span className="font-medium">{interest.project_title}</span>
-                            </p>
-                            {interest.amount && (
-                              <p className="text-sm font-semibold text-[var(--clr-brand)]">
-                                {interest.amount.toLocaleString()} €
-                              </p>
-                            )}
-                            <p className="mt-1 text-xs text-[var(--clr-text-3)]">
-                              {new Date(interest.created_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="flex shrink-0 gap-2">
-                            <button
-                              onClick={async () => {
-                                await api.admin.approveInterest(interest.id);
-                                const updated = await api.admin.tasks();
-                                setTasks(updated as AdminTasks);
-                              }}
-                              className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
-                            >
-                              {tProject("approveJoin")}
-                            </button>
-                            <button
-                              onClick={async () => {
-                                await api.admin.rejectInterest(interest.id);
-                                const updated = await api.admin.tasks();
-                                setTasks(updated as AdminTasks);
-                              }}
-                              className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
-                            >
-                              {tProject("rejectJoin")}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="border-b border-line bg-surface-2">
+                            <tr>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colUser")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colAmount")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colResult")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colDecidedAt")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {(history?.reviewed_interests ?? []).map((item: HistoryInterest) => (
+                              <tr key={item.id} className="hover:bg-surface-2 transition-colors">
+                                <td className="px-4 py-3">
+                                  <p className="font-medium text-[var(--clr-text)]">{item.user_name || "—"}</p>
+                                  {item.user_email && <p className="text-xs text-[var(--clr-text-2)]">{item.user_email}</p>}
+                                </td>
+                                <td className="px-4 py-3 text-[var(--clr-text-2)]">{item.project_title || "—"}</td>
+                                <td className="px-4 py-3 text-sm font-semibold text-[var(--clr-brand)]">{item.amount ? `${item.amount.toLocaleString()} €` : "—"}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${item.status === "ACCEPTED" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
+                                    {item.status === "ACCEPTED" ? t("resultApproved") : t("resultRejected")}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(item.decided_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                                <td className="px-4 py-3">
+                                  <button onClick={async () => { await api.admin.reopenInterest(item.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </section>
 
-                {/* Further Requests (withdraw / change participation / project change) */}
+                {/* Reviewed Requests */}
                 <section>
                   <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--clr-text-2)]">
-                    {tProject("furtherRequests")}
-                    {tasks?.pending_requests?.length ? ` (${tasks.pending_requests.length})` : ""}
+                    {t("historyRequests")}
+                    {history?.reviewed_requests.length ? ` (${history.reviewed_requests.length})` : ""}
                   </h3>
-                  {!tasks?.pending_requests?.length ? (
-                    <p className="text-sm text-[var(--clr-text-2)]">{tCommon("noTasks")}</p>
+                  {!history?.reviewed_requests.length ? (
+                    <p className="text-sm text-[var(--clr-text-2)]">{t("noHistory")}</p>
                   ) : (
-                    <div className="space-y-3">
-                      {tasks.pending_requests.map((req: AdminRequest) => {
-                        let payloadSummary = "";
-                        try {
-                          const p = req.payload ? JSON.parse(req.payload) : {};
-                          if (p.amount) payloadSummary = `Neuer Betrag: ${p.amount} €`;
-                          else if (p.field) payloadSummary = `Feld: ${p.field}${p.value ? ` → ${p.value}` : ""}`;
-                        } catch { /* ignore */ }
-                        return (
-                          <div key={req.id} className="flex items-start justify-between gap-4 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface)] p-4">
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium text-[var(--clr-text)]">
-                                {tProject(`requestTypeLabel.${req.type}`)}
-                              </p>
-                              {req.requester_name && (
-                                <p className="text-sm text-[var(--clr-text-2)]">{req.requester_name}</p>
-                              )}
-                              {req.project_title && (
-                                <p className="text-sm text-[var(--clr-text-2)]">
-                                  Projekt: <span className="font-medium">{req.project_title}</span>
-                                </p>
-                              )}
-                              {payloadSummary && (
-                                <p className="text-sm text-[var(--clr-brand)]">{payloadSummary}</p>
-                              )}
-                              <p className="mt-1 text-xs text-[var(--clr-text-3)]">
-                                {new Date(req.created_at).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <div className="flex shrink-0 gap-2">
-                              <button
-                                onClick={async () => {
-                                  await api.admin.approveRequest(req.id);
-                                  const updated = await api.admin.tasks();
-                                  setTasks(updated as AdminTasks);
-                                }}
-                                className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
-                              >
-                                {tCommon("approve")}
-                              </button>
-                              <button
-                                onClick={async () => {
-                                  await api.admin.rejectRequest(req.id);
-                                  const updated = await api.admin.tasks();
-                                  setTasks(updated as AdminTasks);
-                                }}
-                                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
-                              >
-                                {tCommon("reject")}
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                    <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="border-b border-line bg-surface-2">
+                            <tr>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colType")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colRequester")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colResult")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colDecidedAt")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {(history?.reviewed_requests ?? []).map((req: HistoryRequest) => (
+                              <tr key={req.id} className="hover:bg-surface-2 transition-colors">
+                                <td className="px-4 py-3">
+                                  <p className="font-medium text-[var(--clr-text)]">{tProject(`requestTypeLabel.${req.type}`)}</p>
+                                  {req.admin_note && <p className="text-xs text-red-500">{req.admin_note}</p>}
+                                </td>
+                                <td className="px-4 py-3 text-[var(--clr-text-2)]">{req.requester_name || "—"}</td>
+                                <td className="px-4 py-3 text-[var(--clr-text-2)]">{req.project_title || "—"}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${req.status === "ACCEPTED" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
+                                    {req.status === "ACCEPTED" ? t("resultApproved") : t("resultRejected")}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(req.decided_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                                <td className="px-4 py-3">
+                                  <button onClick={async () => { await api.admin.reopenRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </section>
@@ -367,18 +460,6 @@ export function ManagementView() {
               </div>
             ) : (
               <>
-                <div className="mb-4 flex justify-end">
-                  <button
-                    onClick={async () => {
-                      await api.admin.markAllRead();
-                      const updated = await api.admin.notifications();
-                      setNotifications(updated as SystemNotification[]);
-                    }}
-                    className="text-sm text-[var(--clr-brand)] hover:underline"
-                  >
-                    {tCommon("markAllRead")}
-                  </button>
-                </div>
                 {notifications.length === 0 ? (
                   <p className="text-sm text-[var(--clr-text-2)]">{tCommon("noNotifications")}</p>
                 ) : (
@@ -410,18 +491,6 @@ export function ManagementView() {
                             {new Date(n.created_at).toLocaleString()}
                           </p>
                         </div>
-                        {!n.is_read && (
-                          <button
-                            onClick={async () => {
-                              await api.admin.markNotificationRead(n.id);
-                              setNotifications((prev) => prev.map((x) => x.id === n.id ? { ...x, is_read: true } : x));
-                            }}
-                            className="shrink-0 text-xs text-[var(--clr-text-3)] hover:text-[var(--clr-brand)]"
-                            title="Als gelesen markieren"
-                          >
-                            {"✓"}
-                          </button>
-                        )}
                       </li>
                     ))}
                   </ul>

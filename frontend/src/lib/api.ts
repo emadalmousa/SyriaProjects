@@ -69,6 +69,10 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ admin_note: note }),
       }),
+    history: () => request("/admin/history"),
+    reopenProject: (id: number) => request(`/admin/projects/${id}/reopen`, { method: "POST" }),
+    reopenInterest: (id: number) => request(`/admin/interests/${id}/reopen`, { method: "POST" }),
+    reopenRequest: (id: number) => request(`/admin/requests/${id}/reopen`, { method: "POST" }),
     notifications: (unreadOnly = false) =>
       request(`/admin/notifications${unreadOnly ? "?unread_only=true" : ""}`),
     markNotificationRead: (id: number) =>

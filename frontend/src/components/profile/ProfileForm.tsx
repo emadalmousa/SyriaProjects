@@ -40,6 +40,7 @@ export function ProfileForm() {
   const [withdrawResult, setWithdrawResult] = useState<Record<number, string>>({});
   const [changingId, setChangingId] = useState<number | null>(null);
   const [changeAmount, setChangeAmount] = useState("");
+  const [activeTab, setActiveTab] = useState<"projects" | "participations">("projects");
 
   useEffect(() => {
     api.users.me()
@@ -126,7 +127,7 @@ export function ProfileForm() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1px_1fr] gap-6">
 
           {/* Left: Profile data */}
-          <Card className="p-8" style={{ boxShadow: "var(--sh-md)" }}>
+          <Card className="p-8 lg:ms-6 xl:ms-10" style={{ boxShadow: "var(--sh-md)" }}>
 
             {/* Avatar + info */}
             <div className="mb-8 flex items-center gap-4">
@@ -180,40 +181,69 @@ export function ProfileForm() {
           {/* Divider */}
           <div className="hidden lg:block w-px bg-line self-stretch" />
 
-          {/* Right: My Projects + My Participations + My Requests */}
-          <div className="flex flex-col gap-6">
+          {/* Right: Tabs — My Projects / My Participations */}
+          <div className="flex flex-col gap-4">
 
-            {/* My Projects */}
-            <div className="flex flex-col">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-display text-lg font-semibold text-[var(--clr-text)]">
-                  {t("myProjects")}
-                  {projects.length > 0 && (
-                    <span className="ms-2 rounded-pill bg-brand/10 px-2 py-0.5 text-sm font-bold text-brand">
-                      {projects.length}
-                    </span>
-                  )}
-                </h2>
-                <Link href="/projects/create">
-                  <Button size="sm">{t("newProject")}</Button>
-                </Link>
-              </div>
+            {/* Tab bar */}
+            <div className="flex gap-1 rounded-xl border border-line bg-surface p-1" style={{ boxShadow: "var(--sh-sm)" }}>
+              <button
+                onClick={() => setActiveTab("projects")}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                  activeTab === "projects"
+                    ? "bg-brand text-white shadow-sm"
+                    : "text-[var(--clr-text-2)] hover:text-[var(--clr-text)]"
+                }`}
+              >
+                {t("myProjects")}
+                {projects.length > 0 && (
+                  <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${
+                    activeTab === "projects" ? "bg-white/20 text-white" : "bg-brand/10 text-brand"
+                  }`}>
+                    {projects.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab("participations")}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                  activeTab === "participations"
+                    ? "bg-brand text-white shadow-sm"
+                    : "text-[var(--clr-text-2)] hover:text-[var(--clr-text)]"
+                }`}
+              >
+                {tProject("myParticipations")}
+                {participations.length > 0 && (
+                  <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${
+                    activeTab === "participations" ? "bg-white/20 text-white" : "bg-brand/10 text-brand"
+                  }`}>
+                    {participations.length}
+                  </span>
+                )}
+              </button>
+            </div>
 
-              {projectsLoading ? (
-                <div className="flex flex-1 items-center justify-center py-16">
-                  <div className="h-6 w-6 animate-spin rounded-full border-[3px] border-brand border-t-transparent" />
-                </div>
-              ) : projects.length === 0 ? (
-                <div className="flex flex-1 flex-col items-center justify-center rounded-card border border-dashed border-line bg-surface py-16" style={{ boxShadow: "var(--sh-sm)" }}>
-                  <span className="mb-3 text-4xl">{"\u{1F4CB}"}</span>
-                  <p className="font-medium text-[var(--clr-text-2)]">{t("noProjects")}</p>
-                  <Link href="/projects/create" className="mt-4 text-sm font-semibold text-brand hover:underline">
-                    {t("createFirst")}
+            {/* Tab: My Projects */}
+            {activeTab === "projects" && (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-end">
+                  <Link href="/projects/create">
+                    <Button size="sm">{t("newProject")}</Button>
                   </Link>
                 </div>
-              ) : (
-                <div className="flex flex-col gap-3 overflow-y-auto">
-                  {projects.map((p) => (
+                {projectsLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="h-6 w-6 animate-spin rounded-full border-[3px] border-brand border-t-transparent" />
+                  </div>
+                ) : projects.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-line bg-surface py-16" style={{ boxShadow: "var(--sh-sm)" }}>
+                    <span className="mb-3 text-4xl">{"\u{1F4CB}"}</span>
+                    <p className="font-medium text-[var(--clr-text-2)]">{t("noProjects")}</p>
+                    <Link href="/projects/create" className="mt-4 text-sm font-semibold text-brand hover:underline">
+                      {t("createFirst")}
+                    </Link>
+                  </div>
+                ) : (
+                  projects.map((p) => (
                     <Link
                       key={p.id}
                       href={`/projects/${p.id}`}
@@ -232,139 +262,132 @@ export function ProfileForm() {
                         <StatusBadge status={p.status} />
                       </div>
                     </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* My Participations */}
-            <div className="rounded-[var(--radius-card)] border border-[var(--clr-line)] bg-[var(--clr-surface)] p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <h2 className="text-base font-semibold text-[var(--clr-text)]">
-                  {tProject("myParticipations")}
-                </h2>
-                {participations.length > 0 && (
-                  <span className="rounded-full bg-[var(--clr-brand)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--clr-brand)]">
-                    {participations.length}
-                  </span>
+                  ))
                 )}
               </div>
-              {participations.length === 0 ? (
-                <p className="text-sm text-[var(--clr-text-2)]">{tProject("noParticipations")}</p>
-              ) : (
-                <ul className="space-y-3">
-                  {participations.map((p) => (
-                    <li key={p.id} className="flex flex-col gap-2 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface-2)] p-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-[var(--clr-text)]">{p.project_title}</p>
-                          {p.amount && (
-                            <p className="text-xs text-[var(--clr-text-2)]">{p.amount.toLocaleString()} €</p>
-                          )}
-                          <p className="text-xs text-[var(--clr-text-3)]">
-                            {new Date(p.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          p.status === "ACCEPTED"
-                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                            : p.status === "REJECTED"
-                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                            : p.status === "WITHDRAWN"
-                            ? "bg-gray-100 text-gray-600 dark:bg-gray-800/40 dark:text-gray-400"
-                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                        }`}>
-                          {p.status === "ACCEPTED" ? tProject("joinApproved") : p.status === "REJECTED" ? tProject("joinRejected") : p.status === "WITHDRAWN" ? tProject("withdrawParticipation") : tProject("joinPending")}
-                        </span>
-                      </div>
+            )}
 
-                      {p.status === "ACCEPTED" && (
-                        <div className="mt-1 flex flex-wrap gap-2">
-                          {withdrawResult[p.project_id] === "pending" ? (
-                            <span className="text-xs text-amber-600">{tProject("withdrawRequestSent")}</span>
-                          ) : withdrawResult[p.project_id] === "change_sent" ? (
-                            <span className="text-xs text-[var(--clr-brand)]">{tProject("changeRequestInfo")}</span>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => setChangingId(changingId === p.id ? null : p.id)}
-                                className="text-xs text-[var(--clr-brand)] hover:underline"
-                              >
-                                {tProject("editParticipation")}
-                              </button>
-                              <button
-                                onClick={() => handleWithdraw(p.project_id)}
-                                disabled={withdrawingId === p.project_id}
-                                className="text-xs text-red-500 hover:underline disabled:opacity-50"
-                              >
-                                {withdrawingId === p.project_id ? "..." : tProject("withdrawParticipation")}
-                              </button>
-                            </>
-                          )}
-                          {changingId === p.id && (
-                            <div className="mt-2 flex w-full gap-2">
-                              <input
-                                type="number"
-                                min="100"
-                                value={changeAmount}
-                                onChange={e => setChangeAmount(e.target.value)}
-                                placeholder={tProject("newAmount")}
-                                className="flex-1 rounded-lg border border-[var(--clr-line)] bg-[var(--clr-bg)] px-3 py-1.5 text-sm outline-none focus:border-[var(--clr-brand)]"
-                              />
-                              <button
-                                onClick={() => handleChangeAmount(p.project_id)}
-                                className="rounded-lg bg-[var(--clr-brand)] px-3 py-1.5 text-xs font-semibold text-white"
-                              >
-                                ✓
-                              </button>
-                            </div>
-                          )}
+            {/* Tab: My Participations + My Requests */}
+            {activeTab === "participations" && (
+              <div className="flex flex-col gap-4">
+                {participations.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-line bg-surface py-16" style={{ boxShadow: "var(--sh-sm)" }}>
+                    <p className="text-sm text-[var(--clr-text-2)]">{tProject("noParticipations")}</p>
+                  </div>
+                ) : (
+                  <ul className="space-y-3">
+                    {participations.map((p) => (
+                      <li key={p.id} className="flex flex-col gap-2 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface)] p-3" style={{ boxShadow: "var(--sh-sm)" }}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-[var(--clr-text)]">{p.project_title}</p>
+                            {p.amount && (
+                              <p className="text-xs text-[var(--clr-text-2)]">{p.amount.toLocaleString()} €</p>
+                            )}
+                            <p className="text-xs text-[var(--clr-text-3)]">
+                              {new Date(p.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            p.status === "ACCEPTED"
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                              : p.status === "REJECTED"
+                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                              : p.status === "WITHDRAWN"
+                              ? "bg-gray-100 text-gray-600 dark:bg-gray-800/40 dark:text-gray-400"
+                              : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                          }`}>
+                            {p.status === "ACCEPTED" ? tProject("joinApproved") : p.status === "REJECTED" ? tProject("joinRejected") : p.status === "WITHDRAWN" ? tProject("withdrawParticipation") : tProject("joinPending")}
+                          </span>
                         </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
 
-            {/* My Requests */}
-            {requests.length > 0 && (
-              <div className="rounded-[var(--radius-card)] border border-[var(--clr-line)] bg-[var(--clr-surface)] p-6">
-                <div className="mb-4 flex items-center gap-2">
-                  <h2 className="text-base font-semibold text-[var(--clr-text)]">{tProject("myRequests")}</h2>
-                  <span className="rounded-full bg-[var(--clr-brand)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--clr-brand)]">
-                    {requests.length}
-                  </span>
-                </div>
-                <ul className="space-y-3">
-                  {requests.map((r) => (
-                    <li key={r.id} className="flex items-start justify-between gap-3 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface-2)] p-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-[var(--clr-text)]">
-                          {tProject(`requestTypeLabel.${r.type}`)}
-                        </p>
-                        {r.project_title && (
-                          <p className="text-xs text-[var(--clr-text-2)]">{r.project_title}</p>
+                        {p.status === "ACCEPTED" && (
+                          <div className="mt-1 flex flex-wrap gap-2">
+                            {withdrawResult[p.project_id] === "pending" ? (
+                              <span className="text-xs text-amber-600">{tProject("withdrawRequestSent")}</span>
+                            ) : withdrawResult[p.project_id] === "change_sent" ? (
+                              <span className="text-xs text-[var(--clr-brand)]">{tProject("changeRequestInfo")}</span>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => setChangingId(changingId === p.id ? null : p.id)}
+                                  className="text-xs text-[var(--clr-brand)] hover:underline"
+                                >
+                                  {tProject("editParticipation")}
+                                </button>
+                                <button
+                                  onClick={() => handleWithdraw(p.project_id)}
+                                  disabled={withdrawingId === p.project_id}
+                                  className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                                >
+                                  {withdrawingId === p.project_id ? "..." : tProject("withdrawParticipation")}
+                                </button>
+                              </>
+                            )}
+                            {changingId === p.id && (
+                              <div className="mt-2 flex w-full gap-2">
+                                <input
+                                  type="number"
+                                  min="100"
+                                  value={changeAmount}
+                                  onChange={e => setChangeAmount(e.target.value)}
+                                  placeholder={tProject("newAmount")}
+                                  className="flex-1 rounded-lg border border-[var(--clr-line)] bg-[var(--clr-bg)] px-3 py-1.5 text-sm outline-none focus:border-[var(--clr-brand)]"
+                                />
+                                <button
+                                  onClick={() => handleChangeAmount(p.project_id)}
+                                  className="rounded-lg bg-[var(--clr-brand)] px-3 py-1.5 text-xs font-semibold text-white"
+                                >
+                                  ✓
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         )}
-                        {r.admin_note && r.status === "REJECTED" && (
-                          <p className="mt-1 text-xs text-red-500">{r.admin_note}</p>
-                        )}
-                        <p className="text-xs text-[var(--clr-text-3)]">
-                          {new Date(r.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        r.status === "ACCEPTED"
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : r.status === "REJECTED"
-                          ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                      }`}>
-                        {r.status === "ACCEPTED" ? tProject("requestAccepted") : r.status === "REJECTED" ? tProject("requestRejected") : tProject("requestPending")}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {requests.length > 0 && (
+                  <div className="rounded-[var(--radius-card)] border border-[var(--clr-line)] bg-[var(--clr-surface)] p-5" style={{ boxShadow: "var(--sh-sm)" }}>
+                    <div className="mb-3 flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-[var(--clr-text)]">{tProject("myRequests")}</h3>
+                      <span className="rounded-full bg-[var(--clr-brand)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--clr-brand)]">
+                        {requests.length}
                       </span>
-                    </li>
-                  ))}
-                </ul>
+                    </div>
+                    <ul className="space-y-3">
+                      {requests.map((r) => (
+                        <li key={r.id} className="flex items-start justify-between gap-3 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface-2)] p-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-[var(--clr-text)]">
+                              {tProject(`requestTypeLabel.${r.type}`)}
+                            </p>
+                            {r.project_title && (
+                              <p className="text-xs text-[var(--clr-text-2)]">{r.project_title}</p>
+                            )}
+                            {r.admin_note && r.status === "REJECTED" && (
+                              <p className="mt-1 text-xs text-red-500">{r.admin_note}</p>
+                            )}
+                            <p className="text-xs text-[var(--clr-text-3)]">
+                              {new Date(r.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            r.status === "ACCEPTED"
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                              : r.status === "REJECTED"
+                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                              : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                          }`}>
+                            {r.status === "ACCEPTED" ? tProject("requestAccepted") : r.status === "REJECTED" ? tProject("requestRejected") : tProject("requestPending")}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 
