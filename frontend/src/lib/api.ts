@@ -62,6 +62,8 @@ export const api = {
     update: (id: number, data: object) => request(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     updateStatus: (id: number, status: string) => request(`/projects/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
     updateVisibility: (id: number, visibility: string) => request(`/projects/${id}/visibility`, { method: "PATCH", body: JSON.stringify({ visibility }) }),
+    join: (projectId: number) =>
+      request(`/projects/${projectId}/join`, { method: "POST" }),
     members: {
       list: (projectId: number) => request(`/projects/${projectId}/members`),
       add: (projectId: number, userId: number, project_role: string) =>

@@ -1,23 +1,19 @@
 {
   "status": {
-    "DRAFT": "مسودة",
     "IDEA": "فكرة",
-    "UNDER_REVIEW": "قيد المراجعة",
-    "NEEDS_MORE_INFO": "يحتاج معلومات إضافية",
-    "FINANCIAL_PLAN_REQUIRED": "الخطة المالية مطلوبة",
-    "FINANCIAL_PLAN_PAID": "الخطة المالية مدفوعة",
-    "FINANCIAL_PLAN_DONE": "الخطة المالية منجزة",
+    "ACTIVE": "نشط",
     "APPROVED": "موافق عليه",
-    "INTEREST_RECEIVED": "تم استلام الاهتمام",
     "CONTRACT": "عقد",
     "FUNDED": "ممول",
-    "ACTIVE": "نشط",
-    "PAUSED": "متوقف مؤقتاً",
     "COMPLETED": "مكتمل",
-    "SOLD": "مباع",
-    "REJECTED": "مرفوض",
-    "CANCELLED": "ملغى"
+    "CANCELLED": "ملغى",
+    "PAUSED": "متوقف مؤقتاً",
+    "REJECTED": "مرفوض"
   },
+  "join": "انضم",
+  "joining": "جارٍ الانضمام...",
+  "alreadyMember": "أنت بالفعل عضو",
+  "joinSuccess": "تم الانضمام بنجاح!",
   "category": {
     "FOOD": "غذاء",
     "AGRICULTURE": "زراعة",

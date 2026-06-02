@@ -86,7 +86,7 @@ def seed():
         # ------------------------------------------------------------------ #
 
         u1 = User(
-            email="ahmad.halabi@syriaprojects.sy",
+            email="user@gmail.com",
             hashed_password=hash_password("123456789"),
             first_name="Ahmad",
             last_name="Al-Halabi",
@@ -362,7 +362,7 @@ def seed():
             expected_monthly_revenue=Decimal("3500"),
             expected_monthly_profit=Decimal("900"),
             expected_duration_months=5,
-            status=ProjectStatus.UNDER_REVIEW,
+            status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.IN_REVIEW,
         )
@@ -408,7 +408,7 @@ def seed():
             expected_monthly_revenue=Decimal("2500"),
             expected_monthly_profit=Decimal("600"),
             expected_duration_months=8,
-            status=ProjectStatus.DRAFT,
+            status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.NOT_CHECKED,
         )
@@ -604,7 +604,7 @@ def seed():
             expected_monthly_revenue=Decimal("4500"),
             expected_monthly_profit=Decimal("1000"),
             expected_duration_months=10,
-            status=ProjectStatus.INTEREST_RECEIVED,
+            status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.IN_REVIEW,
         )
@@ -649,7 +649,7 @@ def seed():
             expected_monthly_revenue=Decimal("3000"),
             expected_monthly_profit=Decimal("900"),
             expected_duration_months=3,
-            status=ProjectStatus.DRAFT,
+            status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PRIVATE,
             verification_status=VerificationStatus.NOT_CHECKED,
         )
@@ -731,7 +731,7 @@ def seed():
             expected_monthly_revenue=Decimal("12000"),
             expected_monthly_profit=Decimal("1400"),
             expected_duration_months=4,
-            status=ProjectStatus.UNDER_REVIEW,
+            status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.IN_REVIEW,
         )
@@ -771,7 +771,7 @@ def seed():
             expected_monthly_revenue=Decimal("5000"),
             expected_monthly_profit=Decimal("1800"),
             expected_duration_months=5,
-            status=ProjectStatus.DRAFT,
+            status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.NOT_CHECKED,
         )
@@ -858,7 +858,7 @@ def seed():
             expected_monthly_revenue=Decimal("5000"),
             expected_monthly_profit=Decimal("1500"),
             expected_duration_months=12,
-            status=ProjectStatus.DRAFT,
+            status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.NOT_CHECKED,
         )
@@ -985,7 +985,7 @@ def seed():
             expected_monthly_revenue=Decimal("4000"),
             expected_monthly_profit=Decimal("800"),
             expected_duration_months=8,
-            status=ProjectStatus.UNDER_REVIEW,
+            status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.IN_REVIEW,
         )
@@ -1070,7 +1070,7 @@ def seed():
             expected_monthly_revenue=Decimal("3000"),
             expected_monthly_profit=Decimal("900"),
             expected_duration_months=6,
-            status=ProjectStatus.INTEREST_RECEIVED,
+            status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PUBLIC,
             verification_status=VerificationStatus.IN_REVIEW,
         )

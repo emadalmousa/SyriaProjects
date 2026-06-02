@@ -4,21 +4,20 @@ import { useTranslations } from "next-intl";
 import type { ProjectStatus } from "@/types";
 
 export const STATUS_COLORS: Record<string, string> = {
+  IDEA:      "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400",
   ACTIVE:    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
   APPROVED:  "bg-[var(--clr-info-dim)] text-[var(--clr-info)] dark:bg-blue-900/30 dark:text-blue-400",
-  FUNDED:    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
   CONTRACT:  "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400",
-  REJECTED:  "bg-[var(--clr-danger-dim)] text-[var(--clr-danger)] dark:bg-red-900/30 dark:text-red-400",
-  PAUSED:    "bg-[var(--clr-warn-dim)] text-[var(--clr-warn)] dark:bg-yellow-900/30 dark:text-yellow-400",
+  FUNDED:    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
   COMPLETED: "bg-surface-2 text-[var(--clr-text-2)] dark:bg-gray-700 dark:text-gray-300",
-  IDEA:      "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400",
+  CANCELLED: "bg-surface-2 text-[var(--clr-text-2)] dark:bg-gray-700 dark:text-gray-400",
+  PAUSED:    "bg-[var(--clr-warn-dim)] text-[var(--clr-warn)] dark:bg-yellow-900/30 dark:text-yellow-400",
+  REJECTED:  "bg-[var(--clr-danger-dim)] text-[var(--clr-danger)] dark:bg-red-900/30 dark:text-red-400",
 };
 
 export const ALL_STATUSES: ProjectStatus[] = [
-  "DRAFT","IDEA","UNDER_REVIEW","NEEDS_MORE_INFO",
-  "FINANCIAL_PLAN_REQUIRED","FINANCIAL_PLAN_PAID","FINANCIAL_PLAN_DONE",
-  "APPROVED","INTEREST_RECEIVED","CONTRACT","FUNDED",
-  "ACTIVE","PAUSED","COMPLETED","SOLD","REJECTED","CANCELLED",
+  "IDEA", "ACTIVE", "APPROVED", "CONTRACT", "FUNDED",
+  "COMPLETED", "CANCELLED", "PAUSED", "REJECTED",
 ];
 
 interface StatusBadgeProps {

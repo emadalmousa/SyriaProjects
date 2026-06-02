@@ -7,10 +7,15 @@ export type ProjectRole =
   | "PROJECT_INVESTOR";
 
 export type ProjectStatus =
-  | "DRAFT" | "IDEA" | "UNDER_REVIEW" | "NEEDS_MORE_INFO"
-  | "FINANCIAL_PLAN_REQUIRED" | "FINANCIAL_PLAN_PAID" | "FINANCIAL_PLAN_DONE"
-  | "APPROVED" | "INTEREST_RECEIVED" | "CONTRACT" | "FUNDED"
-  | "ACTIVE" | "PAUSED" | "COMPLETED" | "SOLD" | "REJECTED" | "CANCELLED";
+  | "IDEA"
+  | "ACTIVE"
+  | "APPROVED"
+  | "CONTRACT"
+  | "FUNDED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "PAUSED"
+  | "REJECTED";
 
 export type ProjectVisibility = "PRIVATE" | "PUBLIC" | "ONLY_INVESTORS" | "ARCHIVED";
 export type VerificationStatus = "NOT_CHECKED" | "IN_REVIEW" | "DOCUMENTS_MISSING" | "VERIFIED" | "REJECTED";

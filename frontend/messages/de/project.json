@@ -1,23 +1,19 @@
 {
   "status": {
-    "DRAFT": "Entwurf",
     "IDEA": "Idee",
-    "UNDER_REVIEW": "In Prüfung",
-    "NEEDS_MORE_INFO": "Mehr Infos nötig",
-    "FINANCIAL_PLAN_REQUIRED": "Finanzplan erforderlich",
-    "FINANCIAL_PLAN_PAID": "Finanzplan bezahlt",
-    "FINANCIAL_PLAN_DONE": "Finanzplan fertig",
+    "ACTIVE": "Aktiv",
     "APPROVED": "Genehmigt",
-    "INTEREST_RECEIVED": "Interesse erhalten",
     "CONTRACT": "Vertrag",
     "FUNDED": "Finanziert",
-    "ACTIVE": "Aktiv",
-    "PAUSED": "Pausiert",
     "COMPLETED": "Abgeschlossen",
-    "SOLD": "Verkauft",
-    "REJECTED": "Abgelehnt",
-    "CANCELLED": "Abgebrochen"
+    "CANCELLED": "Abgebrochen",
+    "PAUSED": "Pausiert",
+    "REJECTED": "Abgelehnt"
   },
+  "join": "Teilnehmen",
+  "joining": "Wird beigetreten...",
+  "alreadyMember": "Bereits Mitglied",
+  "joinSuccess": "Erfolgreich beigetreten!",
   "category": {
     "FOOD": "Lebensmittel",
     "AGRICULTURE": "Landwirtschaft",

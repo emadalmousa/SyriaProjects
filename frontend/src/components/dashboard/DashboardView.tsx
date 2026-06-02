@@ -34,19 +34,26 @@ export function DashboardView() {
       .finally(() => setLoading(false));
   }, [router]);
 
+  // ── Visibility filter ────────────────────────────────────────────────────
+
+  const isAdmin         = user?.global_role === "ADMIN";
+  const visibleProjects = isAdmin
+    ? projects
+    : projects.filter((p) => p.status !== "IDEA");
+
   // ── Derived filter options ───────────────────────────────────────────────
 
-  const availableCategories = useMemo(() => { const s = new Set<string>(); projects.forEach((p) => s.add(p.category)); return Array.from(s).sort(); }, [projects]);
-  const availableStatuses   = useMemo(() => { const s = new Set<string>(); projects.forEach((p) => s.add(p.status));   return Array.from(s).sort(); }, [projects]);
-  const availableCountries  = useMemo(() => { const s = new Set<string>(); projects.forEach((p) => { if (p.country)  s.add(p.country);  }); return Array.from(s).sort(); }, [projects]);
-  const availableCities     = useMemo(() => { const s = new Set<string>(); projects.forEach((p) => { if (p.city)     s.add(p.city);     }); return Array.from(s).sort(); }, [projects]);
-  const availableDistricts  = useMemo(() => { const s = new Set<string>(); projects.forEach((p) => { if (p.district) s.add(p.district); }); return Array.from(s).sort(); }, [projects]);
+  const availableCategories = useMemo(() => { const s = new Set<string>(); visibleProjects.forEach((p) => s.add(p.category)); return Array.from(s).sort(); }, [visibleProjects]);
+  const availableStatuses   = useMemo(() => { const s = new Set<string>(); visibleProjects.forEach((p) => s.add(p.status));   return Array.from(s).sort(); }, [visibleProjects]);
+  const availableCountries  = useMemo(() => { const s = new Set<string>(); visibleProjects.forEach((p) => { if (p.country)  s.add(p.country);  }); return Array.from(s).sort(); }, [visibleProjects]);
+  const availableCities     = useMemo(() => { const s = new Set<string>(); visibleProjects.forEach((p) => { if (p.city)     s.add(p.city);     }); return Array.from(s).sort(); }, [visibleProjects]);
+  const availableDistricts  = useMemo(() => { const s = new Set<string>(); visibleProjects.forEach((p) => { if (p.district) s.add(p.district); }); return Array.from(s).sort(); }, [visibleProjects]);
 
   // ── Filtered results ─────────────────────────────────────────────────────
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return projects.filter((p) => {
+    return visibleProjects.filter((p) => {
       if (filters.categories.size > 0 && !filters.categories.has(p.category)) return false;
       if (filters.statuses.size > 0   && !filters.statuses.has(p.status))     return false;
       if (filters.countries.size > 0  && (!p.country  || !filters.countries.has(p.country)))   return false;
@@ -68,7 +75,7 @@ export function DashboardView() {
       }
       return true;
     });
-  }, [projects, filters, search]);
+  }, [visibleProjects, filters, search]);
 
   // ── Filter chips ─────────────────────────────────────────────────────────
 
@@ -94,7 +101,6 @@ export function DashboardView() {
     finally { setStatusUpdating(null); }
   }
 
-  const isAdmin    = user?.global_role === "ADMIN";
   const activeCount = countFilters(filters);
 
   if (loading || !user) return <PageSpinner />;

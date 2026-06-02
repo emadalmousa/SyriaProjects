@@ -17,17 +17,19 @@ from decimal import Decimal
 def seed():
     db = SessionLocal()
     try:
-        existing = db.query(User).filter(User.email == "owner@example.com").first()
+        existing = db.query(User).filter(User.email == "admin@gmail.com").first()
         if existing:
             print("Seed data already exists.")
             return
 
         user = User(
-            email="owner@example.com",
-            hashed_password=hash_password("pass123"),
+            email="admin@gmail.com",
+            hashed_password=hash_password("admin123"),
             first_name="Ahmad",
             last_name="Al-Baker",
             country="Syria",
+            global_role=GlobalRole.ADMIN,
+            email_verified=True,
         )
         db.add(user)
         db.flush()
@@ -51,7 +53,7 @@ def seed():
             expected_monthly_revenue=Decimal("1500"),
             expected_monthly_profit=Decimal("400"),
             expected_duration_months=3,
-            status=ProjectStatus.UNDER_REVIEW,
+            status=ProjectStatus.ACTIVE,
             visibility=ProjectVisibility.PRIVATE,
             verification_status=VerificationStatus.IN_REVIEW,
             risk_level=RiskLevel.MEDIUM,

@@ -100,9 +100,10 @@ def test_add_project_update(client, owner_headers):
 def test_public_list_only_shows_approved_public(client, owner_headers):
     resp = client.get("/projects/public")
     assert resp.status_code == 200
+    valid_public_statuses = {"ACTIVE", "APPROVED", "CONTRACT", "FUNDED", "COMPLETED", "CANCELLED", "PAUSED", "REJECTED"}
     for p in resp.json():
         assert p["visibility"] == "PUBLIC"
-        assert p["status"] in ["APPROVED", "ACTIVE", "FUNDED"]
+        assert p["status"] in valid_public_statuses
 
 
 def test_normal_user_cannot_see_admin_fields(client, owner_headers):

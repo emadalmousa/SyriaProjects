@@ -23,7 +23,14 @@ from app.schemas.project import (
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
-PUBLIC_STATUSES = {ProjectStatus.APPROVED, ProjectStatus.ACTIVE, ProjectStatus.FUNDED}
+ADMIN_ONLY_STATUSES = {ProjectStatus.IDEA}
+JOIN_ALLOWED_STATUSES = {ProjectStatus.ACTIVE}
+READ_ONLY_STATUSES = {
+    ProjectStatus.APPROVED, ProjectStatus.CONTRACT, ProjectStatus.FUNDED,
+    ProjectStatus.COMPLETED, ProjectStatus.CANCELLED,
+    ProjectStatus.PAUSED, ProjectStatus.REJECTED,
+}
+PUBLIC_STATUSES = JOIN_ALLOWED_STATUSES | READ_ONLY_STATUSES
 
 
 @router.get("/public", response_model=list[ProjectListItem])
@@ -126,8 +133,12 @@ def get_project(
         ProjectMember.user_id == current_user.id,
     ).first()
     is_member = member is not None or project.created_by_user_id == current_user.id
+    # Admin-only statuses: deny non-admins regardless of membership
+    if project.status in ADMIN_ONLY_STATUSES and not is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Kein Zugriff")
+    # For public statuses, non-members need public visibility
     if not is_admin(current_user) and not is_member:
-        if project.visibility != ProjectVisibility.PUBLIC or project.status not in PUBLIC_STATUSES:
+        if project.status not in PUBLIC_STATUSES:
             raise HTTPException(status_code=403, detail="Kein Zugriff")
     fp = calculate_funding_progress(
         project.total_budget or Decimal("0"), project.own_capital or Decimal("0")
@@ -244,6 +255,33 @@ def remove_member(
         raise HTTPException(status_code=404, detail="Mitglied nicht gefunden")
     db.delete(member)
     db.commit()
+
+
+@router.post("/{project_id}/join", status_code=status.HTTP_201_CREATED)
+def join_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    project = db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    if project.status not in JOIN_ALLOWED_STATUSES:
+        raise HTTPException(status_code=403, detail="Teilnahme nur bei aktiven Projekten möglich")
+    existing = db.query(ProjectMember).filter(
+        ProjectMember.project_id == project_id,
+        ProjectMember.user_id == current_user.id,
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Bereits Mitglied")
+    member = ProjectMember(
+        project_id=project_id,
+        user_id=current_user.id,
+        project_role=ProjectRole.PROJECT_INVESTOR,
+    )
+    db.add(member)
+    db.commit()
+    return {"message": "Erfolgreich beigetreten"}
 
 
 @router.post("/{project_id}/interests", response_model=ProjectInterestResponse, status_code=status.HTTP_201_CREATED)

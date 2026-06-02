@@ -20,6 +20,8 @@ export function ProjectDetailView() {
   const [budgetItems, setBudgetItems] = useState<ProjectBudgetItem[]>([]);
   const [milestones, setMilestones]   = useState<ProjectMilestone[]>([]);
   const [updates, setUpdates]         = useState<ProjectUpdate[]>([]);
+  const [joining, setJoining] = useState(false);
+  const [joined, setJoined]   = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -36,6 +38,21 @@ export function ProjectDetailView() {
       })
       .catch(() => router.push("/login"));
   }, [id, router]);
+
+  async function handleJoin() {
+    setJoining(true);
+    try {
+      await api.projects.join(id);
+      setJoined(true);
+    } catch (err: unknown) {
+      const e = err as { status?: number; message?: string };
+      if (e?.status === 409 || e?.message?.includes("409")) {
+        setJoined(true); // already a member
+      }
+    } finally {
+      setJoining(false);
+    }
+  }
 
   if (!project) return <PageSpinner />;
 
@@ -60,6 +77,23 @@ export function ProjectDetailView() {
               </p>
               {project.short_description && (
                 <p className="mt-2 text-sm text-[var(--clr-text-2)]">{project.short_description}</p>
+              )}
+              {project.status === "ACTIVE" && (
+                <div className="mt-4">
+                  {joined ? (
+                    <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                      {t("joinSuccess")}
+                    </span>
+                  ) : (
+                    <button
+                      onClick={handleJoin}
+                      disabled={joining}
+                      className="rounded-lg bg-[var(--clr-brand)] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                    >
+                      {joining ? t("joining") : t("join")}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
