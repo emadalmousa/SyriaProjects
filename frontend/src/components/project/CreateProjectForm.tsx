@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { Alert, Button } from "@/components/ui";
 import { InputField, SelectField, TextareaField } from "@/components/ui";
 import { PageHeader, SectionCard } from "@/components/layout";
-import { CATEGORIES } from "@/components/project";
+import { ALL_CATEGORIES } from "@/components/project";
 
 type BudgetItem = { title: string; amount: string; is_required: boolean };
 type Milestone  = { title: string; description: string };
@@ -15,6 +16,8 @@ const removeBtnCls = "shrink-0 text-[var(--clr-danger)] hover:opacity-80";
 
 export function CreateProjectForm() {
   const router = useRouter();
+  const t = useTranslations("project.createForm");
+  const tCat = useTranslations("project.categoryFull");
   const [error, setError]   = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -56,7 +59,7 @@ export function CreateProjectForm() {
         await api.projects.milestones.create(project.id, { title: ms.title, description: ms.description || null });
       router.push(`/projects/${project.id}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Fehler beim Erstellen");
+      setError(err instanceof Error ? err.message : t("error"));
     } finally { setLoading(false); }
   }
 
@@ -64,41 +67,41 @@ export function CreateProjectForm() {
     <div className="min-h-screen bg-[var(--clr-bg)]">
       <div className="mx-auto max-w-3xl px-5 py-8 sm:px-8">
 
-        <PageHeader title="Neues Projekt erstellen" backHref="/dashboard" backLabel="Dashboard" />
+        <PageHeader title={t("pageTitle")} backHref="/dashboard" backLabel={t("backLabel")} />
 
         {error && <Alert type="error" className="mb-5">{error}</Alert>}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
           {/* 1. Grunddaten */}
-          <SectionCard title="Grunddaten" step={1}>
+          <SectionCard title={t("basics")} step={1}>
             <div className="flex flex-col gap-4">
-              <InputField label="Titel" type="text" value={basics.title} onChange={(e) => setBasics({ ...basics, title: e.target.value })} placeholder="z.B. Kleine Bäckerei in Aleppo" required />
-              <InputField label="Kurzbeschreibung" type="text" value={basics.short_description} onChange={(e) => setBasics({ ...basics, short_description: e.target.value })} placeholder="Max. 300 Zeichen" maxLength={300} />
-              <TextareaField label="Beschreibung" value={basics.description} onChange={(e) => setBasics({ ...basics, description: e.target.value })} rows={4} placeholder="Beschreibe dein Projekt ausführlich…" required />
-              <SelectField label="Kategorie" value={basics.category} onChange={(e) => setBasics({ ...basics, category: e.target.value })}>
-                {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              <InputField label={t("title")} type="text" value={basics.title} onChange={(e) => setBasics({ ...basics, title: e.target.value })} placeholder={t("titlePlaceholder")} required />
+              <InputField label={t("shortDescription")} type="text" value={basics.short_description} onChange={(e) => setBasics({ ...basics, short_description: e.target.value })} placeholder={t("shortDescriptionPlaceholder")} maxLength={300} />
+              <TextareaField label={t("description")} value={basics.description} onChange={(e) => setBasics({ ...basics, description: e.target.value })} rows={4} placeholder={t("descriptionPlaceholder")} required />
+              <SelectField label={t("category")} value={basics.category} onChange={(e) => setBasics({ ...basics, category: e.target.value })}>
+                {ALL_CATEGORIES.map((c) => <option key={c} value={c}>{tCat(c as Parameters<typeof tCat>[0])}</option>)}
               </SelectField>
             </div>
           </SectionCard>
 
           {/* 2. Standort */}
-          <SectionCard title="Standort" step={2}>
+          <SectionCard title={t("location")} step={2}>
             <div className="grid grid-cols-2 gap-4">
-              <InputField label="Land" type="text" value={location.country} onChange={(e) => setLocation({ ...location, country: e.target.value })} />
-              <InputField label="Stadt" type="text" value={location.city} onChange={(e) => setLocation({ ...location, city: e.target.value })} placeholder="z.B. Aleppo" required />
-              <InputField label="Bezirk" type="text" value={location.district} onChange={(e) => setLocation({ ...location, district: e.target.value })} placeholder="z.B. Al-Shaar" />
-              <InputField label="Adresse" type="text" value={location.address_text} onChange={(e) => setLocation({ ...location, address_text: e.target.value })} />
+              <InputField label={t("country")} type="text" value={location.country} onChange={(e) => setLocation({ ...location, country: e.target.value })} />
+              <InputField label={t("city")} type="text" value={location.city} onChange={(e) => setLocation({ ...location, city: e.target.value })} placeholder={t("cityPlaceholder")} required />
+              <InputField label={t("district")} type="text" value={location.district} onChange={(e) => setLocation({ ...location, district: e.target.value })} placeholder={t("districtPlaceholder")} />
+              <InputField label={t("address")} type="text" value={location.address_text} onChange={(e) => setLocation({ ...location, address_text: e.target.value })} />
             </div>
           </SectionCard>
 
           {/* 3. Budget */}
-          <SectionCard title="Budget" step={3}>
+          <SectionCard title={t("budget")} step={3}>
             <div className="grid grid-cols-2 gap-4">
-              <InputField label="Gesamtbudget (€)" type="number" value={budget.total_budget} onChange={(e) => setBudget({ ...budget, total_budget: e.target.value })} placeholder="5000" min="1" required />
-              <InputField label="Eigenkapital (€)" type="number" value={budget.own_capital} onChange={(e) => setBudget({ ...budget, own_capital: e.target.value })} placeholder="1200" min="0" />
-              <InputField label="Benötigtes Kapital (€)" type="text" value={neededCapital()} readOnly />
-              <SelectField label="Währung" value={budget.currency} onChange={(e) => setBudget({ ...budget, currency: e.target.value })}>
+              <InputField label={t("totalBudget")} type="number" value={budget.total_budget} onChange={(e) => setBudget({ ...budget, total_budget: e.target.value })} placeholder="5000" min="1" required />
+              <InputField label={t("ownCapital")} type="number" value={budget.own_capital} onChange={(e) => setBudget({ ...budget, own_capital: e.target.value })} placeholder="1200" min="0" />
+              <InputField label={t("neededCapital")} type="text" value={neededCapital()} readOnly />
+              <SelectField label={t("currency")} value={budget.currency} onChange={(e) => setBudget({ ...budget, currency: e.target.value })}>
                 <option value="EUR">EUR</option>
                 <option value="USD">USD</option>
                 <option value="SYP">SYP</option>
@@ -107,57 +110,57 @@ export function CreateProjectForm() {
           </SectionCard>
 
           {/* 4. Projektidee */}
-          <SectionCard title="Projektidee" step={4}>
+          <SectionCard title={t("idea")} step={4}>
             <div className="flex flex-col gap-4">
-              <TextareaField label="Projektziel" value={idea.project_goal} onChange={(e) => setIdea({ ...idea, project_goal: e.target.value })} rows={2} placeholder="Was soll mit dem Projekt erreicht werden?" />
-              <TextareaField label="Zielkunden" value={idea.target_customers} onChange={(e) => setIdea({ ...idea, target_customers: e.target.value })} rows={2} placeholder="Wer sind deine Kunden?" />
-              <TextareaField label="Geschäftsmodell" value={idea.business_model} onChange={(e) => setIdea({ ...idea, business_model: e.target.value })} rows={2} placeholder="Wie verdient das Projekt Geld?" />
+              <TextareaField label={t("projectGoal")} value={idea.project_goal} onChange={(e) => setIdea({ ...idea, project_goal: e.target.value })} rows={2} placeholder={t("projectGoalPlaceholder")} />
+              <TextareaField label={t("targetCustomers")} value={idea.target_customers} onChange={(e) => setIdea({ ...idea, target_customers: e.target.value })} rows={2} placeholder={t("targetCustomersPlaceholder")} />
+              <TextareaField label={t("businessModel")} value={idea.business_model} onChange={(e) => setIdea({ ...idea, business_model: e.target.value })} rows={2} placeholder={t("businessModelPlaceholder")} />
               <div className="grid grid-cols-3 gap-4">
-                <InputField label="Erw. Monatsumsatz (€)" type="number" value={idea.expected_monthly_revenue} onChange={(e) => setIdea({ ...idea, expected_monthly_revenue: e.target.value })} placeholder="1500" min="0" />
-                <InputField label="Erw. Monatsgewinn (€)" type="number" value={idea.expected_monthly_profit} onChange={(e) => setIdea({ ...idea, expected_monthly_profit: e.target.value })} placeholder="400" />
-                <InputField label="Laufzeit (Monate)" type="number" value={idea.expected_duration_months} onChange={(e) => setIdea({ ...idea, expected_duration_months: e.target.value })} placeholder="3" min="1" />
+                <InputField label={t("monthlyRevenue")} type="number" value={idea.expected_monthly_revenue} onChange={(e) => setIdea({ ...idea, expected_monthly_revenue: e.target.value })} placeholder="1500" min="0" />
+                <InputField label={t("monthlyProfit")} type="number" value={idea.expected_monthly_profit} onChange={(e) => setIdea({ ...idea, expected_monthly_profit: e.target.value })} placeholder="400" />
+                <InputField label={t("duration")} type="number" value={idea.expected_duration_months} onChange={(e) => setIdea({ ...idea, expected_duration_months: e.target.value })} placeholder="3" min="1" />
               </div>
             </div>
           </SectionCard>
 
           {/* 5. Budgetpositionen */}
-          <SectionCard title="Budgetpositionen" step={5}>
+          <SectionCard title={t("budgetItems")} step={5}>
             {budgetItems.map((item, i) => (
               <div key={i} className="mb-3 grid grid-cols-3 gap-3 items-end">
-                <InputField label={i === 0 ? "Position" : ""} type="text" value={item.title} onChange={(e) => { const n = [...budgetItems]; n[i].title = e.target.value; setBudgetItems(n); }} placeholder="z.B. Backofen" />
-                <InputField label={i === 0 ? "Betrag (€)" : ""} type="number" value={item.amount} onChange={(e) => { const n = [...budgetItems]; n[i].amount = e.target.value; setBudgetItems(n); }} placeholder="Betrag" min="0" />
+                <InputField label={i === 0 ? t("budgetItemTitle") : ""} type="text" value={item.title} onChange={(e) => { const n = [...budgetItems]; n[i].title = e.target.value; setBudgetItems(n); }} placeholder="" />
+                <InputField label={i === 0 ? t("budgetItemAmount") : ""} type="number" value={item.amount} onChange={(e) => { const n = [...budgetItems]; n[i].amount = e.target.value; setBudgetItems(n); }} placeholder="" min="0" />
                 <div className="flex items-center gap-2 pb-0.5">
                   <label className="flex items-center gap-1.5 text-sm text-[var(--clr-text-2)]">
                     <input type="checkbox" checked={item.is_required} onChange={(e) => { const n = [...budgetItems]; n[i].is_required = e.target.checked; setBudgetItems(n); }} className="accent-brand" />
-                    Pflicht
+                    {t("budgetItemRequired")}
                   </label>
-                  <button type="button" onClick={() => setBudgetItems(budgetItems.filter((_, j) => j !== i))} className={removeBtnCls} aria-label="Entfernen">✕</button>
+                  <button type="button" onClick={() => setBudgetItems(budgetItems.filter((_, j) => j !== i))} className={removeBtnCls} aria-label={t("removeItem")}>{"✕"}</button>
                 </div>
               </div>
             ))}
             <button type="button" onClick={() => setBudgetItems([...budgetItems, { title: "", amount: "", is_required: true }])} className={addBtnCls}>
-              + Position hinzufügen
+              {t("addBudgetItem")}
             </button>
           </SectionCard>
 
           {/* 6. Meilensteine */}
-          <SectionCard title="Meilensteine" step={6}>
+          <SectionCard title={t("milestones")} step={6}>
             {milestones.map((ms, i) => (
               <div key={i} className="mb-3 grid grid-cols-2 gap-3 items-end">
-                <InputField label={i === 0 ? "Meilenstein" : ""} type="text" value={ms.title} onChange={(e) => { const n = [...milestones]; n[i].title = e.target.value; setMilestones(n); }} placeholder="z.B. Laden auswählen" />
+                <InputField label={i === 0 ? t("milestoneTitle") : ""} type="text" value={ms.title} onChange={(e) => { const n = [...milestones]; n[i].title = e.target.value; setMilestones(n); }} placeholder={t("milestonePlaceholder")} />
                 <div className="flex gap-2 items-end">
-                  <InputField label={i === 0 ? "Beschreibung" : ""} wrapClass="flex-1" type="text" value={ms.description} onChange={(e) => { const n = [...milestones]; n[i].description = e.target.value; setMilestones(n); }} placeholder="Optional" />
-                  <button type="button" onClick={() => setMilestones(milestones.filter((_, j) => j !== i))} className={`${removeBtnCls} mb-0.5`} aria-label="Entfernen">✕</button>
+                  <InputField label={i === 0 ? t("milestoneDescription") : ""} wrapClass="flex-1" type="text" value={ms.description} onChange={(e) => { const n = [...milestones]; n[i].description = e.target.value; setMilestones(n); }} placeholder={t("milestoneDescriptionPlaceholder")} />
+                  <button type="button" onClick={() => setMilestones(milestones.filter((_, j) => j !== i))} className={`${removeBtnCls} mb-0.5`} aria-label={t("removeItem")}>{"✕"}</button>
                 </div>
               </div>
             ))}
             <button type="button" onClick={() => setMilestones([...milestones, { title: "", description: "" }])} className={addBtnCls}>
-              + Meilenstein hinzufügen
+              {t("addMilestone")}
             </button>
           </SectionCard>
 
-          <Button type="submit" loading={loading} loadingLabel="Wird erstellt..." className="w-full" size="lg">
-            Projekt einreichen
+          <Button type="submit" loading={loading} loadingLabel={t("submitting")} className="w-full" size="lg">
+            {t("submit")}
           </Button>
         </form>
       </div>

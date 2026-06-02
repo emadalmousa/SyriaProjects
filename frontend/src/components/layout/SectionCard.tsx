@@ -14,7 +14,7 @@ export function SectionCard({ title, step, children, className = "" }: SectionCa
       {title && (
         <h2 className="mb-5 font-display text-base font-semibold text-[var(--clr-text)]">
           {step !== undefined && (
-            <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
+            <span className="me-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
               {step}
             </span>
           )}

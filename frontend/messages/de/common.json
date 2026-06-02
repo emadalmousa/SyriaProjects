@@ -1,0 +1,36 @@
+{
+  "nav": {
+    "brand": "SyriaProjects",
+    "editProfile": "Profil bearbeiten",
+    "logout": "Abmelden",
+    "toggleDark": "Dark Mode umschalten",
+    "newProject": "+ Neues Projekt",
+    "adminArea": "Admin-Bereich"
+  },
+  "footer": {
+    "tagline": "Aufbau. Wachstum. Hoffnung."
+  },
+  "lang": {
+    "de": "Deutsch",
+    "en": "English",
+    "ar": "العربية"
+  },
+  "buttons": {
+    "save": "Speichern",
+    "saving": "Wird gespeichert...",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "loading": "Laden...",
+    "sending": "Wird gesendet...",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "create": "Erstellen"
+  },
+  "or": "oder",
+  "home": {
+    "subtitle": "Projektmanagement-Plattform",
+    "register": "Registrieren",
+    "login": "Anmelden"
+  }
+}

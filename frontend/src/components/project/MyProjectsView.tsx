@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { Project } from "@/types";
 import { PageSpinner, Button } from "@/components/ui";
@@ -10,6 +10,8 @@ import { StatusBadge } from "@/components/project";
 
 export function MyProjectsView() {
   const router = useRouter();
+  const t = useTranslations("profile");
+  const tDash = useTranslations("dashboard");
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading]   = useState(true);
 
@@ -27,20 +29,20 @@ export function MyProjectsView() {
       <div className="mx-auto max-w-screen-lg px-5 py-8 sm:px-8">
 
         <PageHeader
-          title="Meine Projekte"
+          title={t("myProjects")}
           actions={
             <Link href="/projects/create">
-              <Button size="md">+ Neues Projekt</Button>
+              <Button size="md">{tDash("newProject")}</Button>
             </Link>
           }
         />
 
         {projects.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-line bg-surface py-20" style={{ boxShadow: "var(--sh-sm)" }}>
-            <span className="mb-3 text-4xl">📋</span>
-            <p className="font-medium text-[var(--clr-text-2)]">Noch keine Projekte vorhanden.</p>
+            <span className="mb-3 text-4xl">{"\u{1F4CB}"}</span>
+            <p className="font-medium text-[var(--clr-text-2)]">{t("noProjects")}</p>
             <Link href="/projects/create" className="mt-4 text-sm font-semibold text-brand hover:underline">
-              Erstes Projekt erstellen →
+              {t("createFirst")}
             </Link>
           </div>
         ) : (

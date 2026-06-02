@@ -67,6 +67,7 @@
 }
 
 html {
+  font-size: 20px; /* 16px × 1.25 — makes 100% zoom feel like 125% zoom */
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -91,4 +92,9 @@ body {
 :focus-visible {
   outline: 2px solid var(--clr-brand);
   outline-offset: 2px;
+}
+
+/* Arabic font for RTL */
+[dir="rtl"] body {
+  font-family: var(--font-arabic, "Noto Sans Arabic"), system-ui, sans-serif;
 }

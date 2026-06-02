@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { formatMoney, formatPercent } from "@/lib/format";
 import type { Project, ProjectBudgetItem, ProjectMilestone, ProjectUpdate } from "@/types";
@@ -8,14 +10,10 @@ import { PageSpinner, Card } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
 import { StatusBadge, CategoryBadge, FundingBar } from "@/components/project";
 
-const MILESTONE_STATUS: Record<string, string> = {
-  PLANNED: "Geplant", IN_PROGRESS: "In Arbeit", DONE: "Erledigt",
-  DELAYED: "Verzögert", CANCELLED: "Abgebrochen",
-};
-
 export function ProjectDetailView() {
   const params = useParams();
   const router = useRouter();
+  const t = useTranslations("project");
   const id = Number(params.id);
 
   const [project, setProject]       = useState<Project | null>(null);
@@ -47,7 +45,7 @@ export function ProjectDetailView() {
     <div className="min-h-screen bg-[var(--clr-bg)]">
       <div className="mx-auto max-w-4xl px-5 py-8 sm:px-8">
 
-        <PageHeader title={project.title} backHref="/dashboard" backLabel="Dashboard" />
+        <PageHeader title={project.title} backHref="/dashboard" backLabel={t("detail.backLabel")} />
 
         {/* Header Card */}
         <Card className="mb-6 p-6">
@@ -58,7 +56,7 @@ export function ProjectDetailView() {
                 <StatusBadge status={project.status} />
               </div>
               <p className="text-sm text-[var(--clr-text-2)]">
-                📍 {project.city}{project.district ? `, ${project.district}` : ""}{project.country ? `, ${project.country}` : ""}
+                {"\u{1F4CD}"} {project.city}{project.district ? `, ${project.district}` : ""}{project.country ? `, ${project.country}` : ""}
               </p>
               {project.short_description && (
                 <p className="mt-2 text-sm text-[var(--clr-text-2)]">{project.short_description}</p>
@@ -71,21 +69,21 @@ export function ProjectDetailView() {
 
           {/* Budget */}
           <Card className="p-6">
-            <h2 className="mb-4 font-display text-base font-semibold text-[var(--clr-text)]">Budget</h2>
+            <h2 className="mb-4 font-display text-base font-semibold text-[var(--clr-text)]">{t("detail.budget")}</h2>
             <div className="mb-4">
               <div className="mb-2 flex justify-between text-xs font-medium text-[var(--clr-text-2)]">
-                <span>Fortschritt</span><span>{formatPercent(fundingPct)}</span>
+                <span>{t("detail.progress")}</span><span>{formatPercent(fundingPct)}</span>
               </div>
               <FundingBar progress={fundingPct} />
             </div>
             <div className="flex flex-col gap-2 text-sm">
               {[
-                { label: "Gesamtbudget",      value: formatMoney(project.total_budget, project.currency),  cls: "" },
-                { label: "Eigenkapital",       value: formatMoney(project.own_capital, project.currency),   cls: "text-emerald-600 dark:text-emerald-400" },
-                { label: "Benötigt",           value: formatMoney(project.needed_capital, project.currency), cls: "text-accent" },
-                ...(project.expected_monthly_revenue ? [{ label: "Erw. Umsatz/Monat", value: formatMoney(project.expected_monthly_revenue, project.currency), cls: "" }] : []),
-                ...(project.expected_monthly_profit  ? [{ label: "Erw. Gewinn/Monat", value: formatMoney(project.expected_monthly_profit, project.currency),  cls: "" }] : []),
-                ...(project.expected_duration_months ? [{ label: "Laufzeit",           value: `${project.expected_duration_months} Monate`,                   cls: "" }] : []),
+                { label: t("detail.totalBudget"),    value: formatMoney(project.total_budget, project.currency),  cls: "" },
+                { label: t("detail.ownCapital"),     value: formatMoney(project.own_capital, project.currency),   cls: "text-emerald-600 dark:text-emerald-400" },
+                { label: t("detail.needed"),         value: formatMoney(project.needed_capital, project.currency), cls: "text-accent" },
+                ...(project.expected_monthly_revenue ? [{ label: t("detail.monthlyRevenue"), value: formatMoney(project.expected_monthly_revenue, project.currency), cls: "" }] : []),
+                ...(project.expected_monthly_profit  ? [{ label: t("detail.monthlyProfit"),  value: formatMoney(project.expected_monthly_profit, project.currency),  cls: "" }] : []),
+                ...(project.expected_duration_months ? [{ label: t("detail.duration"),       value: t("detail.durationUnit", { months: project.expected_duration_months }), cls: "" }] : []),
               ].map((row) => (
                 <div key={row.label} className="flex justify-between">
                   <span className="text-[var(--clr-text-2)]">{row.label}</span>
@@ -97,11 +95,11 @@ export function ProjectDetailView() {
 
           {/* Projektidee */}
           <Card className="p-6">
-            <h2 className="mb-4 font-display text-base font-semibold text-[var(--clr-text)]">Projektidee</h2>
+            <h2 className="mb-4 font-display text-base font-semibold text-[var(--clr-text)]">{t("detail.projectIdea")}</h2>
             {[
-              { key: "Projektziel",    val: project.project_goal },
-              { key: "Zielkunden",     val: project.target_customers },
-              { key: "Geschäftsmodell",val: project.business_model },
+              { key: t("detail.projectGoal"),    val: project.project_goal },
+              { key: t("detail.targetCustomers"),val: project.target_customers },
+              { key: t("detail.businessModel"),  val: project.business_model },
             ].filter((r) => r.val).map((r) => (
               <div key={r.key} className="mb-3 last:mb-0">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[var(--clr-text-3)]">{r.key}</p>
@@ -113,26 +111,26 @@ export function ProjectDetailView() {
 
         {/* Beschreibung */}
         <Card className="mt-6 p-6">
-          <h2 className="mb-3 font-display text-base font-semibold text-[var(--clr-text)]">Beschreibung</h2>
+          <h2 className="mb-3 font-display text-base font-semibold text-[var(--clr-text)]">{t("detail.descriptionLabel")}</h2>
           <p className="whitespace-pre-wrap text-sm text-[var(--clr-text-2)]">{project.description}</p>
         </Card>
 
         {/* Budgetpositionen */}
         {budgetItems.length > 0 && (
           <Card className="mt-6 p-6">
-            <h2 className="mb-4 font-display text-base font-semibold text-[var(--clr-text)]">Budgetpositionen</h2>
+            <h2 className="mb-4 font-display text-base font-semibold text-[var(--clr-text)]">{t("detail.budgetItems")}</h2>
             <div className="flex flex-col gap-2">
               {budgetItems.map((item) => (
                 <div key={item.id} className="flex justify-between rounded-lg bg-surface-2 px-4 py-3">
                   <div>
                     <span className="font-medium text-[var(--clr-text)]">{item.title}</span>
-                    {item.is_required && <span className="ml-2 text-xs text-[var(--clr-text-3)]">Pflicht</span>}
+                    {item.is_required && <span className="ms-2 text-xs text-[var(--clr-text-3)]">{t("detail.required")}</span>}
                   </div>
                   <span className="font-semibold text-brand">{formatMoney(item.amount, item.currency)}</span>
                 </div>
               ))}
               <div className="flex justify-between border-t border-line pt-2">
-                <span className="font-medium text-[var(--clr-text)]">Gesamt</span>
+                <span className="font-medium text-[var(--clr-text)]">{t("detail.total")}</span>
                 <span className="font-bold text-[var(--clr-text)]">
                   {formatMoney(budgetItems.reduce((s, i) => s + Number(i.amount), 0), budgetItems[0]?.currency)}
                 </span>
@@ -144,7 +142,7 @@ export function ProjectDetailView() {
         {/* Meilensteine */}
         {milestones.length > 0 && (
           <Card className="mt-6 p-6">
-            <h2 className="mb-4 font-display text-base font-semibold text-[var(--clr-text)]">Meilensteine</h2>
+            <h2 className="mb-4 font-display text-base font-semibold text-[var(--clr-text)]">{t("detail.milestones")}</h2>
             <div className="flex flex-col gap-2">
               {milestones.map((ms, i) => (
                 <div key={ms.id} className="flex items-start gap-3 rounded-lg bg-surface-2 px-4 py-3">
@@ -153,7 +151,7 @@ export function ProjectDetailView() {
                   </span>
                   <div>
                     <p className="font-medium text-[var(--clr-text)]">{ms.title}</p>
-                    <p className="text-xs text-[var(--clr-text-3)]">{MILESTONE_STATUS[ms.status] || ms.status}</p>
+                    <p className="text-xs text-[var(--clr-text-3)]">{t(`milestoneStatus.${ms.status}` as Parameters<typeof t>[0])}</p>
                   </div>
                 </div>
               ))}
@@ -164,10 +162,10 @@ export function ProjectDetailView() {
         {/* Updates */}
         {updates.length > 0 && (
           <Card className="mt-6 p-6">
-            <h2 className="mb-4 font-display text-base font-semibold text-[var(--clr-text)]">Projekt-Updates</h2>
+            <h2 className="mb-4 font-display text-base font-semibold text-[var(--clr-text)]">{t("detail.updates")}</h2>
             <div className="flex flex-col gap-3">
               {updates.map((upd) => (
-                <div key={upd.id} className="rounded-lg border-l-4 border-brand bg-surface-2 px-4 py-3">
+                <div key={upd.id} className="rounded-lg border-s-4 border-brand bg-surface-2 px-4 py-3">
                   <p className="font-medium text-[var(--clr-text)]">{upd.title}</p>
                   <p className="mt-1 text-sm text-[var(--clr-text-2)]">{upd.content}</p>
                 </div>

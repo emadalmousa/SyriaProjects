@@ -1,16 +1,16 @@
 "use client";
 import { useState } from "react";
-import { CATEGORY_LABELS, CATEGORY_ICONS } from "./CategoryBadge";
-import { STATUS_LABELS } from "./StatusBadge";
+import { useTranslations } from "next-intl";
+import { CATEGORY_ICONS } from "./CategoryBadge";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export const CAPITAL_BUCKETS = [
-  { label: "Bis 5.000 €",        min: 0,      max: 5000 },
-  { label: "5.000 – 20.000 €",   min: 5000,   max: 20000 },
-  { label: "20.000 – 50.000 €",  min: 20000,  max: 50000 },
-  { label: "50.000 – 100.000 €", min: 50000,  max: 100000 },
-  { label: "Über 100.000 €",     min: 100000, max: Infinity },
+  { min: 0,      max: 5000 },
+  { min: 5000,   max: 20000 },
+  { min: 20000,  max: 50000 },
+  { min: 50000,  max: 100000 },
+  { min: 100000, max: Infinity },
 ];
 
 export interface ProjectFiltersState {
@@ -53,7 +53,7 @@ function FilterSection({ title, count, children }: { title: string; count?: numb
         <span
           className="text-[var(--clr-text-3)] text-xs transition-transform duration-200"
           style={{ display: "inline-block", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
-        >▼</span>
+        >{"▼"}</span>
       </button>
       {open && <div className="mt-2 space-y-0.5">{children}</div>}
     </div>
@@ -105,6 +105,8 @@ export function ProjectFilters({
   availableCategories, availableStatuses,
   availableCountries, availableCities, availableDistricts,
 }: ProjectFiltersProps) {
+  const t = useTranslations("project");
+
   function toggle<T>(set: Set<T>, val: T): Set<T> {
     const n = new Set(set); n.has(val) ? n.delete(val) : n.add(val); return n;
   }
@@ -121,22 +123,22 @@ export function ProjectFilters({
         style={{ boxShadow: "var(--sh-sm)" }}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-[var(--clr-text)]">Filter</h2>
+          <h2 className="text-sm font-bold text-[var(--clr-text)]">{t("filters.title")}</h2>
           {total > 0 && (
             <button onClick={() => onChange(emptyFilters())} className="text-xs text-brand hover:underline">
-              Zurücksetzen
+              {t("filters.reset")}
             </button>
           )}
         </div>
 
-        <FilterSection title="Kategorie" count={filters.categories.size}>
+        <FilterSection title={t("filters.category")} count={filters.categories.size}>
           {availableCategories.length === 0
-            ? <p className="px-2 text-xs text-[var(--clr-text-3)]">Keine Kategorien</p>
+            ? <p className="px-2 text-xs text-[var(--clr-text-3)]">{t("filters.noCategories")}</p>
             : availableCategories.map((cat) => (
                 <FilterCheck
                   key={cat}
                   id={`cat-${cat}`}
-                  label={`${CATEGORY_ICONS[cat] ?? ""} ${CATEGORY_LABELS[cat] ?? cat}`}
+                  label={`${CATEGORY_ICONS[cat] ?? ""} ${t(`category.${cat}` as Parameters<typeof t>[0])}`}
                   checked={filters.categories.has(cat)}
                   onChange={() => set("categories", cat)}
                 />
@@ -144,38 +146,38 @@ export function ProjectFilters({
           }
         </FilterSection>
 
-        <FilterSection title="Status" count={filters.statuses.size}>
+        <FilterSection title={t("filters.status")} count={filters.statuses.size}>
           {availableStatuses.map((st) => (
-            <FilterCheck key={st} id={`st-${st}`} label={STATUS_LABELS[st] ?? st} checked={filters.statuses.has(st)} onChange={() => set("statuses", st)} />
+            <FilterCheck key={st} id={`st-${st}`} label={t(`status.${st}` as Parameters<typeof t>[0])} checked={filters.statuses.has(st)} onChange={() => set("statuses", st)} />
           ))}
         </FilterSection>
 
-        <FilterSection title="Finanzierungsbedarf" count={filters.capitalBuckets.size}>
-          {CAPITAL_BUCKETS.map((b, i) => (
-            <FilterCheck key={i} id={`cap-${i}`} label={b.label} checked={filters.capitalBuckets.has(i)} onChange={() => set("capitalBuckets", i)} />
+        <FilterSection title={t("filters.funding")} count={filters.capitalBuckets.size}>
+          {CAPITAL_BUCKETS.map((_, i) => (
+            <FilterCheck key={i} id={`cap-${i}`} label={t(`capital.bucket${i}` as Parameters<typeof t>[0])} checked={filters.capitalBuckets.has(i)} onChange={() => set("capitalBuckets", i)} />
           ))}
         </FilterSection>
 
         {availableCountries.length > 0 && (
-          <FilterSection title="Land" count={filters.countries.size}>
+          <FilterSection title={t("filters.country")} count={filters.countries.size}>
             {availableCountries.map((c) => (
-              <FilterCheck key={c} id={`country-${c}`} label={`🌍 ${c}`} checked={filters.countries.has(c)} onChange={() => set("countries", c)} />
+              <FilterCheck key={c} id={`country-${c}`} label={`\u{1F30D} ${c}`} checked={filters.countries.has(c)} onChange={() => set("countries", c)} />
             ))}
           </FilterSection>
         )}
 
         {availableCities.length > 0 && (
-          <FilterSection title="Stadt" count={filters.cities.size}>
+          <FilterSection title={t("filters.city")} count={filters.cities.size}>
             {availableCities.map((c) => (
-              <FilterCheck key={c} id={`city-${c}`} label={`🏙️ ${c}`} checked={filters.cities.has(c)} onChange={() => set("cities", c)} />
+              <FilterCheck key={c} id={`city-${c}`} label={`\u{1F3D9}\u{FE0F} ${c}`} checked={filters.cities.has(c)} onChange={() => set("cities", c)} />
             ))}
           </FilterSection>
         )}
 
         {availableDistricts.length > 0 && (
-          <FilterSection title="Ort / Bezirk" count={filters.districts.size}>
+          <FilterSection title={t("filters.district")} count={filters.districts.size}>
             {availableDistricts.map((d) => (
-              <FilterCheck key={d} id={`district-${d}`} label={`📍 ${d}`} checked={filters.districts.has(d)} onChange={() => set("districts", d)} />
+              <FilterCheck key={d} id={`district-${d}`} label={`\u{1F4CD} ${d}`} checked={filters.districts.has(d)} onChange={() => set("districts", d)} />
             ))}
           </FilterSection>
         )}

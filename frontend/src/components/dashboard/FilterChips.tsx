@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 interface Chip {
   label: string;
   onRemove: () => void;
@@ -10,10 +14,12 @@ interface FilterChipsProps {
 }
 
 export function FilterChips({ count, chips, onClearAll }: FilterChipsProps) {
+  const t = useTranslations("dashboard");
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-sm font-medium text-[var(--clr-text-2)]">
-        {count} {count === 1 ? "Projekt" : "Projekte"}
+        {count === 1 ? t("projectCount", { count }) : t("projectCountPlural", { count })}
       </span>
 
       {chips.map((chip, i) => (
@@ -24,10 +30,10 @@ export function FilterChips({ count, chips, onClearAll }: FilterChipsProps) {
           {chip.label}
           <button
             onClick={chip.onRemove}
-            className="ml-0.5 hover:text-brand-mid"
-            aria-label="Filter entfernen"
+            className="ms-0.5 hover:text-brand-mid"
+            aria-label={t("removeFilter")}
           >
-            ×
+            {"×"}
           </button>
         </span>
       ))}
@@ -37,7 +43,7 @@ export function FilterChips({ count, chips, onClearAll }: FilterChipsProps) {
           onClick={onClearAll}
           className="text-xs text-[var(--clr-text-3)] underline hover:text-[var(--clr-text-2)]"
         >
-          Alle löschen
+          {t("clearAll")}
         </button>
       )}
     </div>

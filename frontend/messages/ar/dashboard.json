@@ -1,0 +1,15 @@
+{
+  "title": "لوحة التحكم",
+  "welcome": "أهلاً، {name}",
+  "newProject": "+ مشروع جديد",
+  "adminArea": "لوحة الإدارة",
+  "filterTitle": "تصفية",
+  "filterReset": "إعادة تعيين",
+  "searchPlaceholder": "ابحث عن مشروع — بالاسم، #00042، المدينة، الفئة …",
+  "noProjects": "لا توجد مشاريع",
+  "resetFilters": "إعادة تعيين الفلاتر",
+  "projectCount": "{count} مشروع",
+  "projectCountPlural": "{count} مشاريع",
+  "clearAll": "مسح الكل",
+  "removeFilter": "إزالة الفلتر"
+}

@@ -1,0 +1,36 @@
+{
+  "nav": {
+    "brand": "مشاريع سوريا",
+    "editProfile": "تعديل الملف الشخصي",
+    "logout": "تسجيل الخروج",
+    "toggleDark": "تبديل الوضع الليلي",
+    "newProject": "+ مشروع جديد",
+    "adminArea": "لوحة الإدارة"
+  },
+  "footer": {
+    "tagline": "بناء. نمو. أمل."
+  },
+  "lang": {
+    "de": "Deutsch",
+    "en": "English",
+    "ar": "العربية"
+  },
+  "buttons": {
+    "save": "حفظ",
+    "saving": "جارٍ الحفظ...",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "back": "رجوع",
+    "loading": "جارٍ التحميل...",
+    "sending": "جارٍ الإرسال...",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء"
+  },
+  "or": "أو",
+  "home": {
+    "subtitle": "منصة إدارة المشاريع",
+    "register": "تسجيل",
+    "login": "تسجيل الدخول"
+  }
+}

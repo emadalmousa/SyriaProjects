@@ -14,8 +14,8 @@ export function ConfirmDialog({
   title,
   message,
   icon = "⚠️",
-  confirmLabel = "Bestätigen",
-  cancelLabel = "Abbrechen",
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {

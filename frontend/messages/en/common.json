@@ -1,0 +1,36 @@
+{
+  "nav": {
+    "brand": "SyriaProjects",
+    "editProfile": "Edit Profile",
+    "logout": "Logout",
+    "toggleDark": "Toggle Dark Mode",
+    "newProject": "+ New Project",
+    "adminArea": "Admin Area"
+  },
+  "footer": {
+    "tagline": "Build. Grow. Hope."
+  },
+  "lang": {
+    "de": "Deutsch",
+    "en": "English",
+    "ar": "العربية"
+  },
+  "buttons": {
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "loading": "Loading...",
+    "sending": "Sending...",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create"
+  },
+  "or": "or",
+  "home": {
+    "subtitle": "Project Management Platform",
+    "register": "Register",
+    "login": "Login"
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { User } from "@/types";
 
@@ -9,6 +10,7 @@ import { StatCard, ConfirmDialog, UserTable } from "@/components/management";
 
 export function ManagementView() {
   const router = useRouter();
+  const t = useTranslations("management");
   const [me, setMe]       = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -95,8 +97,8 @@ export function ManagementView() {
         {/* Header */}
         <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="font-display text-2xl font-semibold text-[var(--clr-text)]">Admin-Bereich</h1>
-            <p className="mt-0.5 text-sm text-[var(--clr-text-2)]">Nutzerverwaltung &amp; Plattformkontrolle</p>
+            <h1 className="font-display text-2xl font-semibold text-[var(--clr-text)]">{t("title")}</h1>
+            <p className="mt-0.5 text-sm text-[var(--clr-text-2)]">{t("subtitle")}</p>
           </div>
           {testDataStatus !== null && (
             <div className="flex flex-col items-end gap-1">
@@ -115,10 +117,10 @@ export function ManagementView() {
                     ? <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     : <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                 }
-                {testDataLoading ? "Wird ausgeführt…" : testDataStatus.exists ? "Testdaten löschen" : "Testdaten hinzufügen"}
+                {testDataLoading ? t("running") : testDataStatus.exists ? t("deleteTestData") : t("addTestData")}
               </button>
               {testDataStatus.exists && (
-                <p className="text-xs text-[var(--clr-text-3)]">{testDataStatus.users} Testnutzer · {testDataStatus.projects} Testprojekte</p>
+                <p className="text-xs text-[var(--clr-text-3)]">{t("testDataLabel", { users: testDataStatus.users, projects: testDataStatus.projects })}</p>
               )}
             </div>
           )}
@@ -126,35 +128,35 @@ export function ManagementView() {
 
         {/* Stats */}
         <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatCard label="Nutzer gesamt" value={stats.total}   icon="👥" />
-          <StatCard label="Admins"        value={stats.admins}  icon="🛡️" accent />
-          <StatCard label="Aktiv"         value={stats.active}  icon="✅" />
-          <StatCard label="Blockiert"     value={stats.blocked} icon="🚫" />
+          <StatCard label={t("totalUsers")} value={stats.total}   icon={"\u{1F465}"} />
+          <StatCard label={t("admins")}     value={stats.admins}  icon={"\u{1F6E1}\u{FE0F}"} accent />
+          <StatCard label={t("active")}     value={stats.active}  icon={"\u{2705}"} />
+          <StatCard label={t("blocked")}    value={stats.blocked} icon={"\u{1F6AB}"} />
         </div>
 
         {/* Toolbar */}
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px]">
-            <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--clr-text-3)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--clr-text-3)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
             </svg>
             <input
               type="search" value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Suche nach Name, E-Mail, Land …"
-              className="w-full rounded-lg border border-line bg-surface py-2 pl-10 pr-4 text-sm text-[var(--clr-text)] placeholder-[var(--clr-text-3)] outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+              placeholder={t("searchPlaceholder")}
+              className="w-full rounded-lg border border-line bg-surface py-2 ps-10 pe-4 text-sm text-[var(--clr-text)] placeholder-[var(--clr-text-3)] outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
             />
           </div>
           <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as typeof roleFilter)} className={selectCls}>
-            <option value="ALL">Alle Rollen</option>
-            <option value="ADMIN">Nur Admins</option>
-            <option value="USER">Nur User</option>
+            <option value="ALL">{t("allRoles")}</option>
+            <option value="ADMIN">{t("onlyAdmins")}</option>
+            <option value="USER">{t("onlyUsers")}</option>
           </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className={selectCls}>
-            <option value="ALL">Alle Status</option>
-            <option value="ACTIVE">Aktiv</option>
-            <option value="BLOCKED">Blockiert</option>
+            <option value="ALL">{t("allStatus")}</option>
+            <option value="ACTIVE">{t("active")}</option>
+            <option value="BLOCKED">{t("blocked")}</option>
           </select>
-          <span className="text-sm text-[var(--clr-text-3)]">{displayed.length} von {users.length}</span>
+          <span className="text-sm text-[var(--clr-text-3)]">{displayed.length} / {users.length}</span>
         </div>
 
         {/* Table */}
@@ -171,10 +173,10 @@ export function ManagementView() {
 
       {confirmBlock && (
         <ConfirmDialog
-          icon="🚫"
-          title="Nutzer blockieren?"
-          message={<><strong className="text-[var(--clr-text)]">{confirmBlock.full_name || confirmBlock.email}</strong> kann sich nach dem Blockieren nicht mehr einloggen.</>}
-          confirmLabel="Blockieren"
+          icon={"\u{1F6AB}"}
+          title={t("confirmBlockTitle")}
+          message={<><strong className="text-[var(--clr-text)]">{confirmBlock.full_name || confirmBlock.email}</strong> {t("confirmBlockBody", { name: "" })}</>}
+          confirmLabel={t("confirmBlock")}
           onConfirm={() => handleToggleActive(confirmBlock)}
           onCancel={() => setConfirmBlock(null)}
         />

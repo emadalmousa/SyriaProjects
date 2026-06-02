@@ -1,0 +1,20 @@
+{
+  "title": "حسابي",
+  "back": "رجوع",
+  "saveSuccess": "تم حفظ الملف الشخصي بنجاح.",
+  "save": "حفظ",
+  "saving": "جارٍ الحفظ...",
+  "firstName": "الاسم الأول",
+  "lastName": "اسم العائلة",
+  "email": "البريد الإلكتروني",
+  "phone": "الهاتف",
+  "country": "البلد",
+  "countryPlaceholder": "اختر بلدك",
+  "resetPassword": "إعادة تعيين كلمة المرور",
+  "sendingReset": "جارٍ الإرسال...",
+  "resetSent": "تم إرسال بريد إعادة التعيين إلى {email}",
+  "myProjects": "مشاريعي",
+  "newProject": "+ جديد",
+  "noProjects": "لا توجد مشاريع بعد",
+  "createFirst": "أنشئ مشروعك الأول ←"
+}

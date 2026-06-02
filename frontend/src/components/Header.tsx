@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { User } from "@/types";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 const AVATAR_COLORS = [
   "bg-emerald-600","bg-violet-600","bg-amber-600","bg-rose-600","bg-sky-600","bg-teal-600",
@@ -12,6 +13,7 @@ const AVATAR_COLORS = [
 
 export default function Header() {
   const router = useRouter();
+  const t = useTranslations("common");
   const [user, setUser] = useState<User | null>(null);
   const [dark, setDark] = useState(false);
 
@@ -64,12 +66,14 @@ export default function Header() {
 
         {/* Right controls */}
         <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+
           {user && (
             <>
               {/* Avatar link */}
               <Link
                 href="/profile"
-                title="Profil bearbeiten"
+                title={t("nav.editProfile")}
                 className="group relative flex items-center justify-center rounded-full ring-2 ring-transparent hover:ring-brand/40 transition-all"
               >
                 {user.avatar_url ? (
@@ -90,7 +94,7 @@ export default function Header() {
                 onClick={logout}
                 className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[var(--clr-danger-dim)] bg-[var(--clr-danger-dim)] px-3.5 py-1.5 text-xs font-semibold text-[var(--clr-danger)] transition hover:bg-red-100 dark:border-red-800/50 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
               >
-                Abmelden
+                {t("nav.logout")}
               </button>
             </>
           )}
@@ -98,7 +102,7 @@ export default function Header() {
           {/* Dark-mode toggle */}
           <button
             onClick={toggleDark}
-            aria-label="Dark Mode umschalten"
+            aria-label={t("nav.toggleDark")}
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface-2 text-[var(--clr-text-2)] transition hover:border-brand/30 hover:text-brand dark:bg-surface dark:border-line"
           >
             {dark ? (

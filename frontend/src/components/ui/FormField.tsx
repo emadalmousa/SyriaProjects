@@ -93,15 +93,15 @@ export function PasswordField({ label, wrapClass = "", show, onToggleShow, requi
         <input
           type={show ? "text" : "password"}
           required={required}
-          className={`${inputCls} pr-10 ${className}`}
+          className={`${inputCls} pe-10 ${className}`}
           {...props}
         />
         <button
           type="button"
           onClick={onToggleShow}
           tabIndex={-1}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--clr-text-3)] hover:text-[var(--clr-text-2)]"
-          aria-label={show ? "Passwort verbergen" : "Passwort anzeigen"}
+          className="absolute end-3 top-1/2 -translate-y-1/2 text-[var(--clr-text-3)] hover:text-[var(--clr-text-2)]"
+          aria-label={show ? "Hide password" : "Show password"}
         >
           {show ? (
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { User, Project } from "@/types";
 
@@ -10,12 +10,14 @@ import { SearchBar, FilterChips } from "@/components/dashboard";
 import {
   ProjectFilters, ProjectCard,
   emptyFilters, countFilters, CAPITAL_BUCKETS,
-  CATEGORY_LABELS, CATEGORY_ICONS, STATUS_LABELS,
+  CATEGORY_ICONS,
 } from "@/components/project";
 import type { ProjectFiltersState } from "@/components/project";
 
 export function DashboardView() {
   const router = useRouter();
+  const t = useTranslations("dashboard");
+  const tProject = useTranslations("project");
   const [user, setUser]       = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -60,7 +62,7 @@ export function DashboardView() {
       if (q) {
         const serial = String(p.id).padStart(5, "0");
         const hay = [p.title, p.short_description ?? "", serial, p.city ?? "", p.country ?? "",
-          p.district ?? "", CATEGORY_LABELS[p.category] ?? p.category, STATUS_LABELS[p.status] ?? p.status,
+          p.district ?? "", p.category, p.status,
         ].join(" ").toLowerCase();
         if (!hay.includes(q)) return false;
       }
@@ -71,12 +73,12 @@ export function DashboardView() {
   // ── Filter chips ─────────────────────────────────────────────────────────
 
   const chips = [
-    ...Array.from(filters.categories).map((v) => ({ label: `${CATEGORY_ICONS[v] ?? ""} ${CATEGORY_LABELS[v] ?? v}`, onRemove: () => setFilters((f) => ({ ...f, categories: del(f.categories, v) })) })),
-    ...Array.from(filters.statuses).map((v)    => ({ label: STATUS_LABELS[v] ?? v, onRemove: () => setFilters((f) => ({ ...f, statuses: del(f.statuses, v) })) })),
-    ...Array.from(filters.capitalBuckets).map((i) => ({ label: CAPITAL_BUCKETS[i].label, onRemove: () => setFilters((f) => ({ ...f, capitalBuckets: del(f.capitalBuckets, i) })) })),
-    ...Array.from(filters.countries).map((v)   => ({ label: `🌍 ${v}`, onRemove: () => setFilters((f) => ({ ...f, countries: del(f.countries, v) })) })),
-    ...Array.from(filters.cities).map((v)      => ({ label: `🏙️ ${v}`, onRemove: () => setFilters((f) => ({ ...f, cities: del(f.cities, v) })) })),
-    ...Array.from(filters.districts).map((v)   => ({ label: `📍 ${v}`, onRemove: () => setFilters((f) => ({ ...f, districts: del(f.districts, v) })) })),
+    ...Array.from(filters.categories).map((v) => ({ label: `${CATEGORY_ICONS[v] ?? ""} ${tProject(`category.${v}` as Parameters<typeof tProject>[0])}`, onRemove: () => setFilters((f) => ({ ...f, categories: del(f.categories, v) })) })),
+    ...Array.from(filters.statuses).map((v)    => ({ label: tProject(`status.${v}` as Parameters<typeof tProject>[0]), onRemove: () => setFilters((f) => ({ ...f, statuses: del(f.statuses, v) })) })),
+    ...Array.from(filters.capitalBuckets).map((i) => ({ label: tProject(`capital.bucket${i}` as Parameters<typeof tProject>[0]), onRemove: () => setFilters((f) => ({ ...f, capitalBuckets: del(f.capitalBuckets, i) })) })),
+    ...Array.from(filters.countries).map((v)   => ({ label: `\u{1F30D} ${v}`, onRemove: () => setFilters((f) => ({ ...f, countries: del(f.countries, v) })) })),
+    ...Array.from(filters.cities).map((v)      => ({ label: `\u{1F3D9}\u{FE0F} ${v}`, onRemove: () => setFilters((f) => ({ ...f, cities: del(f.cities, v) })) })),
+    ...Array.from(filters.districts).map((v)   => ({ label: `\u{1F4CD} ${v}`, onRemove: () => setFilters((f) => ({ ...f, districts: del(f.districts, v) })) })),
   ];
 
   function del<T>(s: Set<T>, v: T): Set<T> { const n = new Set(s); n.delete(v); return n; }
@@ -104,7 +106,7 @@ export function DashboardView() {
       <SearchBar
         value={search}
         onChange={setSearch}
-        placeholder="Projekt suchen — nach Name, #00042, Stadt, Kategorie …"
+        placeholder={t("searchPlaceholder")}
       />
 
       <div className="mx-auto max-w-screen-2xl px-5 py-8 sm:px-8">
@@ -112,17 +114,17 @@ export function DashboardView() {
         {/* Top bar */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="font-display text-2xl font-semibold text-[var(--clr-text)]">Dashboard</h1>
-            <p className="mt-0.5 text-sm text-[var(--clr-text-2)]">Willkommen, {user.full_name || user.email}</p>
+            <h1 className="font-display text-2xl font-semibold text-[var(--clr-text)]">{t("title")}</h1>
+            <p className="mt-0.5 text-sm text-[var(--clr-text-2)]">{t("welcome", { name: user.full_name || user.email })}</p>
           </div>
           <div className="flex items-center gap-2">
             {isAdmin && (
               <Link href="/management" className="flex items-center gap-1.5 rounded-lg border border-[var(--clr-danger-dim)] bg-[var(--clr-danger-dim)] px-4 py-2 text-sm font-semibold text-[var(--clr-danger)] transition hover:bg-red-100 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400">
-                🛡️ Admin-Bereich
+                {"\u{1F6E1}\u{FE0F}"} {t("adminArea")}
               </Link>
             )}
             <Link href="/projects/create" className="rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-mid active:scale-95">
-              + Neues Projekt
+              {t("newProject")}
             </Link>
           </div>
         </div>
@@ -134,7 +136,7 @@ export function DashboardView() {
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M3 10h12M3 16h6" /></svg>
-          Filter
+          {t("filterTitle")}
           {activeCount > 0 && <span className="rounded-pill bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">{activeCount}</span>}
         </button>
 
@@ -160,10 +162,10 @@ export function DashboardView() {
 
             {filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-line bg-surface py-16">
-                <span className="mb-3 text-4xl">🔍</span>
-                <p className="font-medium text-[var(--clr-text-2)]">Keine Projekte gefunden</p>
+                <span className="mb-3 text-4xl">{"\u{1F50D}"}</span>
+                <p className="font-medium text-[var(--clr-text-2)]">{t("noProjects")}</p>
                 <button onClick={() => setFilters(emptyFilters())} className="mt-3 text-sm text-brand hover:underline">
-                  Filter zurücksetzen
+                  {t("resetFilters")}
                 </button>
               </div>
             ) : (

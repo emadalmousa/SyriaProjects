@@ -2,13 +2,15 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { Alert, Button, PageSpinner } from "@/components/ui";
 import { PasswordField } from "@/components/ui";
 import { AuthCard, AuthBrand } from "@/components/auth";
 
 function ResetPasswordContent() {
+  const t = useTranslations("auth.resetPassword");
   const token = useSearchParams().get("token") ?? "";
   const [newPw, setNewPw]         = useState("");
   const [confirmPw, setConfirmPw] = useState("");
@@ -20,35 +22,35 @@ function ResetPasswordContent() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault(); setError("");
-    if (newPw.length < 8) { setError("Das Passwort muss mindestens 8 Zeichen lang sein."); return; }
-    if (newPw !== confirmPw) { setError("Die Passwörter stimmen nicht überein."); return; }
+    if (newPw.length < 8) { setError(t("tooShort")); return; }
+    if (newPw !== confirmPw) { setError(t("mismatch")); return; }
     setLoading(true);
     try { await api.auth.resetPassword(token, newPw, confirmPw); setSuccess(true); }
-    catch (err: unknown) { setError(err instanceof Error ? err.message : "Fehler beim Zurücksetzen."); }
+    catch (err: unknown) { setError(err instanceof Error ? err.message : t("failed")); }
     finally { setLoading(false); }
   }
 
   return (
     <AuthCard>
-      <AuthBrand title="Neues Passwort setzen" subtitle="Gib dein neues Passwort ein." />
+      <AuthBrand title={t("title")} subtitle={t("subtitle")} />
 
       {success ? (
         <>
-          <Alert type="success" className="mb-6">Passwort erfolgreich zurückgesetzt.</Alert>
+          <Alert type="success" className="mb-6">{t("success")}</Alert>
           <Link href="/login" className="block w-full rounded-lg bg-brand py-3 text-center text-sm font-semibold text-white transition hover:bg-brand-mid">
-            Zur Anmeldung
+            {t("backToLogin")}
           </Link>
         </>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {error && <Alert type="error">{error}</Alert>}
-          <PasswordField label="Neues Passwort" value={newPw} onChange={(e) => setNewPw(e.target.value)} show={showNew} onToggleShow={() => setShowNew((v) => !v)} required minLength={8} placeholder="Mindestens 8 Zeichen" />
-          <PasswordField label="Passwort bestätigen" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} show={showConfirm} onToggleShow={() => setShowConfirm((v) => !v)} required placeholder="••••••••" />
-          <Button type="submit" loading={loading} loadingLabel="Wird gespeichert..." className="w-full" size="lg">
-            Passwort zurücksetzen
+          <PasswordField label={t("newPassword")} value={newPw} onChange={(e) => setNewPw(e.target.value)} show={showNew} onToggleShow={() => setShowNew((v) => !v)} required minLength={8} placeholder={t("newPasswordPlaceholder")} />
+          <PasswordField label={t("confirmPassword")} value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} show={showConfirm} onToggleShow={() => setShowConfirm((v) => !v)} required placeholder={"••••••••"} />
+          <Button type="submit" loading={loading} loadingLabel={t("saving")} className="w-full" size="lg">
+            {t("submit")}
           </Button>
           <p className="text-center text-sm text-[var(--clr-text-2)]">
-            <Link href="/login" className="font-semibold text-brand hover:underline">Zurück zur Anmeldung</Link>
+            <Link href="/login" className="font-semibold text-brand hover:underline">{t("backToLogin")}</Link>
           </p>
         </form>
       )}

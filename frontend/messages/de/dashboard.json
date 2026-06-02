@@ -1,0 +1,15 @@
+{
+  "title": "Dashboard",
+  "welcome": "Willkommen, {name}",
+  "newProject": "+ Neues Projekt",
+  "adminArea": "Admin-Bereich",
+  "filterTitle": "Filter",
+  "filterReset": "Zurücksetzen",
+  "searchPlaceholder": "Projekt suchen — nach Name, #00042, Stadt, Kategorie …",
+  "noProjects": "Keine Projekte gefunden",
+  "resetFilters": "Filter zurücksetzen",
+  "projectCount": "{count} Projekt",
+  "projectCountPlural": "{count} Projekte",
+  "clearAll": "Alle löschen",
+  "removeFilter": "Filter entfernen"
+}

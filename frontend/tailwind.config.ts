@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 
 const config: Config = {
   content: [
@@ -38,6 +39,7 @@ const config: Config = {
       fontFamily: {
         sans:    ["var(--font-sans)", "system-ui", "sans-serif"],
         display: ["var(--font-display)", "Georgia", "serif"],
+        arabic:  ["var(--font-arabic)", "Noto Sans Arabic", "system-ui", "sans-serif"],
       },
       /* ── Schatten ─────────────────────────── */
       boxShadow: {
@@ -53,7 +55,12 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(({ addVariant }) => {
+      addVariant("rtl", '[dir="rtl"] &');
+      addVariant("ltr", '[dir="ltr"] &');
+    }),
+  ],
 };
 
 export default config;

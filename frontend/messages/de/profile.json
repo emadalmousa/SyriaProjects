@@ -1,0 +1,20 @@
+{
+  "title": "Mein Konto",
+  "back": "Zurück",
+  "saveSuccess": "Profil erfolgreich gespeichert.",
+  "save": "Speichern",
+  "saving": "Wird gespeichert...",
+  "firstName": "Vorname",
+  "lastName": "Nachname",
+  "email": "E-Mail",
+  "phone": "Telefon",
+  "country": "Land",
+  "countryPlaceholder": "Bitte wählen",
+  "resetPassword": "Passwort zurücksetzen",
+  "sendingReset": "Wird gesendet...",
+  "resetSent": "Reset-E-Mail wurde an {email} gesendet",
+  "myProjects": "Meine Projekte",
+  "newProject": "+ Neu",
+  "noProjects": "Noch keine Projekte vorhanden",
+  "createFirst": "Erstes Projekt erstellen →"
+}

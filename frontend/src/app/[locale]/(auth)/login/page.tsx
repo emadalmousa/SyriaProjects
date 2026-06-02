@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { signIn } from "next-auth/react";
 import { api } from "@/lib/api";
 import { saveToken } from "@/lib/auth";
@@ -12,6 +13,8 @@ import { AuthCard, AuthBrand } from "@/components/auth";
 
 function LoginContent() {
   const router = useRouter();
+  const t = useTranslations("auth.login");
+  const tc = useTranslations("common");
   const searchParams = useSearchParams();
   const [email, setEmail]     = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +36,7 @@ function LoginContent() {
       saveToken(data.access_token);
       router.push("/dashboard");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Login fehlgeschlagen";
+      const msg = err instanceof Error ? err.message : t("loginFailed");
       if (msg === "EMAIL_NOT_VERIFIED") { setError("EMAIL_NOT_VERIFIED"); setShowResend(true); }
       else setError(msg);
     } finally { setLoading(false); }
@@ -43,12 +46,12 @@ function LoginContent() {
     setGoogleLoading(true);
     try {
       const result = await signIn("google", { redirect: false });
-      if (result?.error) { setError("Google Login fehlgeschlagen"); setGoogleLoading(false); return; }
+      if (result?.error) { setError(t("googleFailed")); setGoogleLoading(false); return; }
       const { getSession } = await import("next-auth/react");
       const session = await getSession();
       const googleIdToken = (session as { googleIdToken?: string } | null)?.googleIdToken;
       if (googleIdToken) { const data = await api.auth.googleLogin(googleIdToken); saveToken(data.access_token); router.push("/dashboard"); }
-    } catch { setError("Google Login fehlgeschlagen"); setGoogleLoading(false); }
+    } catch { setError(t("googleFailed")); setGoogleLoading(false); }
   }
 
   async function handleResend() {
@@ -59,20 +62,20 @@ function LoginContent() {
 
   return (
     <AuthCard>
-      <AuthBrand title="Willkommen zurück" subtitle="Melde dich bei SyriaProjects an" />
+      <AuthBrand title={t("title")} subtitle={t("subtitle")} />
 
       {registeredParam === "1" && (
-        <Alert type="info" className="mb-4">Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse.</Alert>
+        <Alert type="info" className="mb-4">{t("registeredSuccess")}</Alert>
       )}
       {error === "EMAIL_NOT_VERIFIED" ? (
         <Alert type="error" className="mb-4">
-          <p>Bitte bestätige zuerst deine E-Mail-Adresse.</p>
+          <p>{t("emailNotVerified")}</p>
           {showResend && !resendSent && (
             <button onClick={handleResend} disabled={resendLoading} className="mt-2 font-semibold underline disabled:opacity-50">
-              {resendLoading ? "Wird gesendet..." : "Bestätigungs-E-Mail erneut senden"}
+              {resendLoading ? t("resendSending") : t("resendLink")}
             </button>
           )}
-          {resendSent && <p className="mt-2 text-emerald-700 dark:text-emerald-400">E-Mail wurde gesendet.</p>}
+          {resendSent && <p className="mt-2 text-emerald-700 dark:text-emerald-400">{t("resendSent")}</p>}
         </Alert>
       ) : error ? (
         <Alert type="error" className="mb-4">{error}</Alert>
@@ -90,29 +93,29 @@ function LoginContent() {
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
         </svg>
-        {googleLoading ? "Laden..." : "Mit Google anmelden"}
+        {googleLoading ? t("googleLoading") : t("googleButton")}
       </button>
 
       <div className="mb-5 flex items-center gap-3">
         <div className="flex-1 border-t border-line" />
-        <span className="text-xs text-[var(--clr-text-3)]">oder</span>
+        <span className="text-xs text-[var(--clr-text-3)]">{tc("or")}</span>
         <div className="flex-1 border-t border-line" />
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <InputField label="E-Mail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="deine@email.de" required />
-        <PasswordField label="Passwort" value={password} onChange={(e) => setPassword(e.target.value)} show={showPassword} onToggleShow={() => setShowPassword((v) => !v)} required placeholder="••••••••" />
-        <div className="text-right">
-          <Link href="/forgot-password" className="text-xs font-semibold text-brand hover:underline">Passwort vergessen?</Link>
+        <InputField label={t("email")} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="deine@email.de" required />
+        <PasswordField label={t("password")} value={password} onChange={(e) => setPassword(e.target.value)} show={showPassword} onToggleShow={() => setShowPassword((v) => !v)} required placeholder={"••••••••"} />
+        <div className="text-end">
+          <Link href="/forgot-password" className="text-xs font-semibold text-brand hover:underline">{t("forgotPassword")}</Link>
         </div>
-        <Button type="submit" loading={loading} loadingLabel="Laden..." className="w-full" size="lg">
-          Anmelden
+        <Button type="submit" loading={loading} loadingLabel={tc("buttons.loading")} className="w-full" size="lg">
+          {t("submit")}
         </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-[var(--clr-text-2)]">
-        Noch kein Konto?{" "}
-        <Link href="/register" className="font-semibold text-brand hover:underline">Kostenlos registrieren</Link>
+        {t("noAccount")}{" "}
+        <Link href="/register" className="font-semibold text-brand hover:underline">{t("registerLink")}</Link>
       </p>
     </AuthCard>
   );

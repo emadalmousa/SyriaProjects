@@ -1,0 +1,20 @@
+{
+  "title": "My Account",
+  "back": "Back",
+  "saveSuccess": "Profile saved successfully.",
+  "save": "Save",
+  "saving": "Saving...",
+  "firstName": "First name",
+  "lastName": "Last name",
+  "email": "Email",
+  "phone": "Phone",
+  "country": "Country",
+  "countryPlaceholder": "Please select",
+  "resetPassword": "Reset password",
+  "sendingReset": "Sending...",
+  "resetSent": "Reset email sent to {email}",
+  "myProjects": "My Projects",
+  "newProject": "+ New",
+  "noProjects": "No projects yet",
+  "createFirst": "Create first project →"
+}

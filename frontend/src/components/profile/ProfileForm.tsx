@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { User, Project } from "@/types";
 import { Alert, Button, Avatar, PageSpinner } from "@/components/ui";
@@ -19,6 +19,7 @@ const COUNTRIES = [
 
 export function ProfileForm() {
   const router = useRouter();
+  const t = useTranslations("profile");
 
   const [user, setUser]       = useState<User | null>(null);
   const [form, setForm]       = useState({ first_name: "", last_name: "", phone: "", country: "" });
@@ -57,10 +58,10 @@ export function ProfileForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault(); setError(""); setSuccess(false);
-    if (!form.first_name.trim()) { setError("Vorname ist erforderlich"); return; }
+    if (!form.first_name.trim()) { setError(t("firstName") + " required"); return; }
     setLoading(true);
     try { const updated = await api.users.updateProfile(form) as User; setUser(updated); setSuccess(true); }
-    catch (err: unknown) { setError(err instanceof Error ? err.message : "Fehler beim Speichern"); }
+    catch (err: unknown) { setError(err instanceof Error ? err.message : "Error"); }
     finally { setLoading(false); }
   }
 
@@ -70,11 +71,11 @@ export function ProfileForm() {
     <div className="bg-[var(--clr-bg)]">
       <div className="mx-auto max-w-screen-xl px-5 py-10 sm:px-8">
 
-        <PageHeader title="Mein Konto" backHref="/dashboard" backLabel="Zurück" />
+        <PageHeader title={t("title")} backHref="/dashboard" backLabel={t("back")} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1px_1fr] gap-6">
 
-          {/* ── Links: Profildaten ── */}
+          {/* Left: Profile data */}
           <Card className="p-8" style={{ boxShadow: "var(--sh-md)" }}>
 
             {/* Avatar + info */}
@@ -91,57 +92,57 @@ export function ProfileForm() {
               </div>
             </div>
 
-            {success && <Alert type="success" className="mb-5">Profil erfolgreich gespeichert.</Alert>}
+            {success && <Alert type="success" className="mb-5">{t("saveSuccess")}</Alert>}
             {error   && <Alert type="error"   className="mb-5">{error}</Alert>}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-3">
-                <InputField label="Vorname" type="text" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} placeholder="Ahmad" required />
-                <InputField label="Nachname" type="text" value={form.last_name} onChange={(e) => set("last_name", e.target.value)} placeholder="Al-Halabi" />
+                <InputField label={t("firstName")} type="text" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} placeholder="Ahmad" required />
+                <InputField label={t("lastName")} type="text" value={form.last_name} onChange={(e) => set("last_name", e.target.value)} placeholder="Al-Halabi" />
               </div>
 
-              <InputField label="E-Mail" type="email" value={user.email} disabled />
+              <InputField label={t("email")} type="email" value={user.email} disabled />
 
               <div className="grid grid-cols-2 gap-3">
-                <InputField label="Telefon" type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+49 123 456789" />
-                <SelectField label="Land" value={form.country} onChange={(e) => set("country", e.target.value)}>
-                  <option value="">Bitte wählen</option>
+                <InputField label={t("phone")} type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+49 123 456789" />
+                <SelectField label={t("country")} value={form.country} onChange={(e) => set("country", e.target.value)}>
+                  <option value="">{t("countryPlaceholder")}</option>
                   {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </SelectField>
               </div>
 
-              <Button type="submit" loading={loading} loadingLabel="Wird gespeichert..." className="mt-2 w-full" size="lg">
-                Speichern
+              <Button type="submit" loading={loading} loadingLabel={t("saving")} className="mt-2 w-full" size="lg">
+                {t("save")}
               </Button>
             </form>
 
             <div className="mt-6 border-t border-line pt-6">
               {resetSent ? (
-                <Alert type="success">Reset-E-Mail wurde an <strong>{user.email}</strong> gesendet.</Alert>
+                <Alert type="success">{t("resetSent", { email: user.email })}</Alert>
               ) : (
-                <Button variant="secondary" onClick={handleResetPassword} loading={resetLoading} loadingLabel="Wird gesendet..." className="w-full" size="lg">
-                  Passwort zurücksetzen
+                <Button variant="secondary" onClick={handleResetPassword} loading={resetLoading} loadingLabel={t("sendingReset")} className="w-full" size="lg">
+                  {t("resetPassword")}
                 </Button>
               )}
             </div>
           </Card>
 
-          {/* ── Trennlinie ── */}
+          {/* Divider */}
           <div className="hidden lg:block w-px bg-line self-stretch" />
 
-          {/* ── Rechts: Meine Projekte ── */}
+          {/* Right: My Projects */}
           <div className="flex flex-col">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-display text-lg font-semibold text-[var(--clr-text)]">
-                Meine Projekte
+                {t("myProjects")}
                 {projects.length > 0 && (
-                  <span className="ml-2 rounded-pill bg-brand/10 px-2 py-0.5 text-sm font-bold text-brand">
+                  <span className="ms-2 rounded-pill bg-brand/10 px-2 py-0.5 text-sm font-bold text-brand">
                     {projects.length}
                   </span>
                 )}
               </h2>
               <Link href="/projects/create">
-                <Button size="sm">+ Neu</Button>
+                <Button size="sm">{t("newProject")}</Button>
               </Link>
             </div>
 
@@ -151,10 +152,10 @@ export function ProfileForm() {
               </div>
             ) : projects.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center rounded-card border border-dashed border-line bg-surface py-16" style={{ boxShadow: "var(--sh-sm)" }}>
-                <span className="mb-3 text-4xl">📋</span>
-                <p className="font-medium text-[var(--clr-text-2)]">Noch keine Projekte vorhanden.</p>
+                <span className="mb-3 text-4xl">{"\u{1F4CB}"}</span>
+                <p className="font-medium text-[var(--clr-text-2)]">{t("noProjects")}</p>
                 <Link href="/projects/create" className="mt-4 text-sm font-semibold text-brand hover:underline">
-                  Erstes Projekt erstellen →
+                  {t("createFirst")}
                 </Link>
               </div>
             ) : (

@@ -1,4 +1,7 @@
-import Link from "next/link";
+"use client";
+
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { formatMoney, formatPercent } from "@/lib/format";
 import type { Project } from "@/types";
 import { StatusBadge, StatusSelect } from "./StatusBadge";
@@ -17,6 +20,8 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project: p, isAdmin, statusUpdating, onStatusChange }: ProjectCardProps) {
+  const t = useTranslations("project");
+
   return (
     <div
       className="group rounded-card border border-line bg-surface transition-all hover:border-brand/40 hover:-translate-y-px"
@@ -25,10 +30,10 @@ export function ProjectCard({ project: p, isAdmin, statusUpdating, onStatusChang
       <div className="p-5">
         <div className="flex items-start justify-between gap-4">
 
-          {/* Left – clickable area */}
+          {/* Left - clickable area */}
           <Link href={`/projects/${p.id}`} className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              {p.category && <span className="text-base">{CATEGORY_ICONS[p.category] ?? "📦"}</span>}
+              {p.category && <span className="text-base">{CATEGORY_ICONS[p.category] ?? "\u{1F4E6}"}</span>}
               <h2 className="truncate font-semibold text-[var(--clr-text)] group-hover:text-brand transition-colors">
                 {p.title}
               </h2>
@@ -60,13 +65,13 @@ export function ProjectCard({ project: p, isAdmin, statusUpdating, onStatusChang
               )}
               {p.funding_progress > 0 && (
                 <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                  {formatPercent(p.funding_progress)} finanziert
+                  {t("card.funded", { percent: formatPercent(p.funding_progress).replace("%", "") })}
                 </span>
               )}
             </div>
           </Link>
 
-          {/* Right – status */}
+          {/* Right - status */}
           <div className="shrink-0 flex flex-col items-end gap-2">
             {isAdmin && onStatusChange ? (
               <>
@@ -82,7 +87,7 @@ export function ProjectCard({ project: p, isAdmin, statusUpdating, onStatusChang
                   <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
-                  Bearbeiten
+                  {t("card.edit")}
                 </Link>
               </>
             ) : (

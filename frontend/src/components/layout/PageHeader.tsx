@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 interface PageHeaderProps {
   title: string;
@@ -8,7 +8,7 @@ interface PageHeaderProps {
   actions?: React.ReactNode;
 }
 
-export function PageHeader({ title, subtitle, backHref, backLabel = "Zurück", actions }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, backHref, backLabel = "", actions }: PageHeaderProps) {
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
       <div className="flex items-center gap-3">
@@ -17,7 +17,7 @@ export function PageHeader({ title, subtitle, backHref, backLabel = "Zurück", a
             href={backHref}
             className="flex items-center gap-1.5 text-sm text-[var(--clr-text-2)] transition hover:text-[var(--clr-text)]"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-4 w-4 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
             {backLabel}
