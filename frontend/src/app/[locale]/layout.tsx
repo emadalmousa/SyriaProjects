@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { routing, rtlLocales, type Locale } from "@/i18n/routing";
 import { Providers } from "../providers";
 import "../globals.css";
+import "flag-icons/css/flag-icons.min.css";
 
 const displayFont = Lora({
   subsets: ["latin"],
