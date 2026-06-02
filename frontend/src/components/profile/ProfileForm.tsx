@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
-import type { User, Project, UserInterest } from "@/types";
+import type { User, Project, UserInterest, AdminRequest } from "@/types";
 import { Alert, Button, Avatar, PageSpinner } from "@/components/ui";
 import { InputField, SelectField } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
@@ -33,6 +33,13 @@ export function ProfileForm() {
   const [projects, setProjects]         = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [participations, setParticipations] = useState<UserInterest[]>([]);
+  const [requests, setRequests] = useState<AdminRequest[]>([]);
+
+  // Participation action states
+  const [withdrawingId, setWithdrawingId] = useState<number | null>(null);
+  const [withdrawResult, setWithdrawResult] = useState<Record<number, string>>({});
+  const [changingId, setChangingId] = useState<number | null>(null);
+  const [changeAmount, setChangeAmount] = useState("");
 
   useEffect(() => {
     api.users.me()
@@ -50,6 +57,10 @@ export function ProfileForm() {
 
     api.users.myInterests()
       .then((data) => setParticipations(data as UserInterest[]))
+      .catch(() => {});
+
+    api.users.myRequests()
+      .then((data) => setRequests(data as AdminRequest[]))
       .catch(() => {});
   }, [router]);
 
@@ -69,6 +80,39 @@ export function ProfileForm() {
     try { const updated = await api.users.updateProfile(form) as User; setUser(updated); setSuccess(true); }
     catch (err: unknown) { setError(err instanceof Error ? err.message : "Error"); }
     finally { setLoading(false); }
+  }
+
+  async function handleWithdraw(projectId: number) {
+    setWithdrawingId(projectId);
+    try {
+      const res = await api.projects.withdrawParticipation(projectId) as { requires_approval?: boolean };
+      if (res.requires_approval) {
+        setWithdrawResult(prev => ({ ...prev, [projectId]: "pending" }));
+        // Refresh requests list
+        api.users.myRequests().then((data) => setRequests(data as AdminRequest[])).catch(() => {});
+      } else {
+        setParticipations(prev => prev.filter(p => p.project_id !== projectId));
+      }
+    } catch {
+      // ignore
+    } finally {
+      setWithdrawingId(null);
+    }
+  }
+
+  async function handleChangeAmount(projectId: number) {
+    const amount = parseFloat(changeAmount);
+    if (isNaN(amount) || amount < 100) return;
+    try {
+      await api.projects.changeParticipation(projectId, { amount });
+      setChangingId(null);
+      setChangeAmount("");
+      setWithdrawResult(prev => ({ ...prev, [projectId]: "change_sent" }));
+      // Refresh requests list
+      api.users.myRequests().then((data) => setRequests(data as AdminRequest[])).catch(() => {});
+    } catch {
+      // ignore
+    }
   }
 
   if (!user) return <PageSpinner />;
@@ -136,7 +180,7 @@ export function ProfileForm() {
           {/* Divider */}
           <div className="hidden lg:block w-px bg-line self-stretch" />
 
-          {/* Right: My Projects + My Participations */}
+          {/* Right: My Projects + My Participations + My Requests */}
           <div className="flex flex-col gap-6">
 
             {/* My Projects */}
@@ -210,30 +254,119 @@ export function ProfileForm() {
               ) : (
                 <ul className="space-y-3">
                   {participations.map((p) => (
-                    <li key={p.id} className="flex items-start justify-between gap-3 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface-2)] p-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-[var(--clr-text)]">{p.project_title}</p>
-                        {p.amount && (
-                          <p className="text-xs text-[var(--clr-text-2)]">{p.amount.toLocaleString()} €</p>
-                        )}
-                        <p className="text-xs text-[var(--clr-text-3)]">
-                          {new Date(p.created_at).toLocaleDateString()}
-                        </p>
+                    <li key={p.id} className="flex flex-col gap-2 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface-2)] p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-[var(--clr-text)]">{p.project_title}</p>
+                          {p.amount && (
+                            <p className="text-xs text-[var(--clr-text-2)]">{p.amount.toLocaleString()} €</p>
+                          )}
+                          <p className="text-xs text-[var(--clr-text-3)]">
+                            {new Date(p.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          p.status === "ACCEPTED"
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : p.status === "REJECTED"
+                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                            : p.status === "WITHDRAWN"
+                            ? "bg-gray-100 text-gray-600 dark:bg-gray-800/40 dark:text-gray-400"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                        }`}>
+                          {p.status === "ACCEPTED" ? tProject("joinApproved") : p.status === "REJECTED" ? tProject("joinRejected") : p.status === "WITHDRAWN" ? tProject("withdrawParticipation") : tProject("joinPending")}
+                        </span>
                       </div>
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        p.status === "ACCEPTED"
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : p.status === "REJECTED"
-                          ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                      }`}>
-                        {p.status === "ACCEPTED" ? tProject("joinApproved") : p.status === "REJECTED" ? tProject("joinRejected") : tProject("joinPending")}
-                      </span>
+
+                      {p.status === "ACCEPTED" && (
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          {withdrawResult[p.project_id] === "pending" ? (
+                            <span className="text-xs text-amber-600">{tProject("withdrawRequestSent")}</span>
+                          ) : withdrawResult[p.project_id] === "change_sent" ? (
+                            <span className="text-xs text-[var(--clr-brand)]">{tProject("changeRequestInfo")}</span>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => setChangingId(changingId === p.id ? null : p.id)}
+                                className="text-xs text-[var(--clr-brand)] hover:underline"
+                              >
+                                {tProject("editParticipation")}
+                              </button>
+                              <button
+                                onClick={() => handleWithdraw(p.project_id)}
+                                disabled={withdrawingId === p.project_id}
+                                className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                              >
+                                {withdrawingId === p.project_id ? "..." : tProject("withdrawParticipation")}
+                              </button>
+                            </>
+                          )}
+                          {changingId === p.id && (
+                            <div className="mt-2 flex w-full gap-2">
+                              <input
+                                type="number"
+                                min="100"
+                                value={changeAmount}
+                                onChange={e => setChangeAmount(e.target.value)}
+                                placeholder={tProject("newAmount")}
+                                className="flex-1 rounded-lg border border-[var(--clr-line)] bg-[var(--clr-bg)] px-3 py-1.5 text-sm outline-none focus:border-[var(--clr-brand)]"
+                              />
+                              <button
+                                onClick={() => handleChangeAmount(p.project_id)}
+                                className="rounded-lg bg-[var(--clr-brand)] px-3 py-1.5 text-xs font-semibold text-white"
+                              >
+                                ✓
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
               )}
             </div>
+
+            {/* My Requests */}
+            {requests.length > 0 && (
+              <div className="rounded-[var(--radius-card)] border border-[var(--clr-line)] bg-[var(--clr-surface)] p-6">
+                <div className="mb-4 flex items-center gap-2">
+                  <h2 className="text-base font-semibold text-[var(--clr-text)]">{tProject("myRequests")}</h2>
+                  <span className="rounded-full bg-[var(--clr-brand)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--clr-brand)]">
+                    {requests.length}
+                  </span>
+                </div>
+                <ul className="space-y-3">
+                  {requests.map((r) => (
+                    <li key={r.id} className="flex items-start justify-between gap-3 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface-2)] p-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-[var(--clr-text)]">
+                          {tProject(`requestTypeLabel.${r.type}`)}
+                        </p>
+                        {r.project_title && (
+                          <p className="text-xs text-[var(--clr-text-2)]">{r.project_title}</p>
+                        )}
+                        {r.admin_note && r.status === "REJECTED" && (
+                          <p className="mt-1 text-xs text-red-500">{r.admin_note}</p>
+                        )}
+                        <p className="text-xs text-[var(--clr-text-3)]">
+                          {new Date(r.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        r.status === "ACCEPTED"
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : r.status === "REJECTED"
+                          ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                      }`}>
+                        {r.status === "ACCEPTED" ? tProject("requestAccepted") : r.status === "REJECTED" ? tProject("requestRejected") : tProject("requestPending")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
           </div>
 

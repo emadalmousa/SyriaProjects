@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.permissions import is_admin
 from app.core.security import decode_access_token
+from app.models.admin_request import AdminRequest
 from app.models.project import Project, ProjectInterest, InterestType
 from app.models.user import User
 from app.schemas.user import UserProfileUpdate, UserResponse, UserRoleUpdate
@@ -96,6 +97,33 @@ def get_my_interests(
             "amount": float(i.amount) if i.amount else None,
             "status": i.status,
             "created_at": i.created_at.isoformat(),
+        })
+    return result
+
+
+@router.get("/me/requests")
+def get_my_requests(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    requests = (
+        db.query(AdminRequest)
+        .filter(AdminRequest.requester_id == current_user.id)
+        .order_by(AdminRequest.created_at.desc())
+        .all()
+    )
+    result = []
+    for r in requests:
+        project = db.get(Project, r.project_id) if r.project_id else None
+        result.append({
+            "id": r.id,
+            "type": r.type,
+            "status": r.status,
+            "project_id": r.project_id,
+            "project_title": project.title if project else None,
+            "payload": r.payload,
+            "admin_note": r.admin_note,
+            "created_at": r.created_at.isoformat(),
         })
     return result
 

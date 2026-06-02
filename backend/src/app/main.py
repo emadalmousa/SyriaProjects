@@ -7,6 +7,7 @@ from fastapi.responses import Response
 from app.core.config import settings
 from app.routers import auth, projects, uploads, users
 from app.routers import admin
+from app.routers.participation import router as participation_router
 
 app = FastAPI(title="Project Platform API", version="0.1.0")
 
@@ -43,6 +44,7 @@ async def cors_middleware(request: Request, call_next):
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(projects.router)
+app.include_router(participation_router)
 app.include_router(uploads.router)
 app.include_router(admin.router)
 

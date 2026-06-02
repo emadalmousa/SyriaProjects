@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
-import type { User, AdminTasks, SystemNotification } from "@/types";
+import type { User, AdminTasks, SystemNotification, AdminRequest } from "@/types";
 
 import { PageSpinner } from "@/components/ui";
 import { StatCard, ConfirmDialog, UserTable } from "@/components/management";
@@ -106,7 +106,9 @@ export function ManagementView() {
 
   if (loading || !me) return <PageSpinner />;
 
-  const taskCount = tasks ? tasks.idea_projects.length + tasks.pending_interests.length : 0;
+  const taskCount = tasks
+    ? tasks.idea_projects.length + tasks.pending_interests.length + (tasks.pending_requests?.length || 0)
+    : 0;
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   return (
@@ -281,6 +283,73 @@ export function ManagementView() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </section>
+
+                {/* Further Requests (withdraw / change participation / project change) */}
+                <section>
+                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--clr-text-2)]">
+                    {tProject("furtherRequests")}
+                    {tasks?.pending_requests?.length ? ` (${tasks.pending_requests.length})` : ""}
+                  </h3>
+                  {!tasks?.pending_requests?.length ? (
+                    <p className="text-sm text-[var(--clr-text-2)]">{tCommon("noTasks")}</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {tasks.pending_requests.map((req: AdminRequest) => {
+                        let payloadSummary = "";
+                        try {
+                          const p = req.payload ? JSON.parse(req.payload) : {};
+                          if (p.amount) payloadSummary = `Neuer Betrag: ${p.amount} €`;
+                          else if (p.field) payloadSummary = `Feld: ${p.field}${p.value ? ` → ${p.value}` : ""}`;
+                        } catch { /* ignore */ }
+                        return (
+                          <div key={req.id} className="flex items-start justify-between gap-4 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface)] p-4">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-[var(--clr-text)]">
+                                {tProject(`requestTypeLabel.${req.type}`)}
+                              </p>
+                              {req.requester_name && (
+                                <p className="text-sm text-[var(--clr-text-2)]">{req.requester_name}</p>
+                              )}
+                              {req.project_title && (
+                                <p className="text-sm text-[var(--clr-text-2)]">
+                                  Projekt: <span className="font-medium">{req.project_title}</span>
+                                </p>
+                              )}
+                              {payloadSummary && (
+                                <p className="text-sm text-[var(--clr-brand)]">{payloadSummary}</p>
+                              )}
+                              <p className="mt-1 text-xs text-[var(--clr-text-3)]">
+                                {new Date(req.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="flex shrink-0 gap-2">
+                              <button
+                                onClick={async () => {
+                                  await api.admin.approveRequest(req.id);
+                                  const updated = await api.admin.tasks();
+                                  setTasks(updated as AdminTasks);
+                                }}
+                                className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+                              >
+                                {tCommon("approve")}
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  await api.admin.rejectRequest(req.id);
+                                  const updated = await api.admin.tasks();
+                                  setTasks(updated as AdminTasks);
+                                }}
+                                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+                              >
+                                {tCommon("reject")}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </section>

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.notifications import create_notification
 from app.core.permissions import is_admin
+from app.models.admin_request import AdminRequest, RequestStatus as AdminReqStatus, RequestType
 from app.models.notification import SystemNotification, NotificationType
 from app.models.project import (
     Project, ProjectMember, ProjectInterest, ProjectBudgetItem, ProjectMilestone,
@@ -94,6 +95,27 @@ def get_admin_tasks(
         .order_by(ProjectInterest.created_at.desc())
         .all()
     )
+    pending_requests = (
+        db.query(AdminRequest)
+        .filter(AdminRequest.status == AdminReqStatus.PENDING)
+        .order_by(AdminRequest.created_at.desc())
+        .all()
+    )
+    requests_list = []
+    for r in pending_requests:
+        requester = db.get(User, r.requester_id)
+        project = db.get(Project, r.project_id) if r.project_id else None
+        requests_list.append({
+            "id": r.id,
+            "type": r.type,
+            "status": r.status,
+            "requester_name": requester.full_name if requester else None,
+            "project_id": r.project_id,
+            "project_title": project.title if project else None,
+            "interest_id": r.interest_id,
+            "payload": r.payload,
+            "created_at": r.created_at.isoformat(),
+        })
     return {
         "idea_projects": [
             {
@@ -120,6 +142,7 @@ def get_admin_tasks(
             }
             for i in pending_interests
         ],
+        "pending_requests": requests_list,
     }
 
 
@@ -204,6 +227,105 @@ def reject_interest(
     create_notification(db, NotificationType.JOIN_REJECTED, actor=actor, project=project, interest=interest)
     db.commit()
     return {"message": "Teilnahme abgelehnt"}
+
+
+class RequestRejection(BaseModel):
+    admin_note: str | None = None
+
+
+@router.post("/requests/{request_id}/approve")
+def approve_request(
+    request_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    import json as _json
+    from decimal import Decimal as _Decimal
+
+    req = db.get(AdminRequest, request_id)
+    if not req:
+        raise HTTPException(status_code=404, detail="Anfrage nicht gefunden")
+    if req.status != AdminReqStatus.PENDING:
+        raise HTTPException(status_code=400, detail="Anfrage ist nicht mehr ausstehend")
+
+    project = db.get(Project, req.project_id) if req.project_id else None
+    interest = db.get(ProjectInterest, req.interest_id) if req.interest_id else None
+    requester = db.get(User, req.requester_id)
+    payload = _json.loads(req.payload) if req.payload else {}
+
+    if req.type == RequestType.CHANGE_PARTICIPATION and interest:
+        new_amount = _Decimal(str(payload.get("amount", interest.amount or 0)))
+        old_amount = _Decimal(str(payload.get("old_amount", interest.amount or 0)))
+        diff = new_amount - old_amount
+        interest.amount = new_amount
+        if "message" in payload:
+            interest.message = payload["message"]
+        if project and diff != 0:
+            project.own_capital = (_Decimal(str(project.own_capital or 0)) + diff)
+
+    elif req.type == RequestType.WITHDRAW_PARTICIPATION and interest:
+        member = db.query(ProjectMember).filter(
+            ProjectMember.project_id == req.project_id,
+            ProjectMember.user_id == req.requester_id,
+        ).first()
+        if member:
+            db.delete(member)
+        if interest.amount and project and project.own_capital:
+            project.own_capital = max(
+                _Decimal("0"),
+                _Decimal(str(project.own_capital)) - _Decimal(str(interest.amount))
+            )
+        interest.status = InterestStatus.WITHDRAWN
+
+    elif req.type == RequestType.CHANGE_PROJECT_DATA and project:
+        field = payload.get("field")
+        value = payload.get("value")
+        if field and hasattr(project, field):
+            setattr(project, field, value)
+
+    elif req.type == RequestType.CHANGE_PROJECT_STATUS and project:
+        field = payload.get("field")
+        value = payload.get("value")
+        if field == "cancel":
+            project.status = ProjectStatus.CANCELLED
+        elif field == "complete":
+            project.status = ProjectStatus.COMPLETED
+        elif field == "pause":
+            project.status = ProjectStatus.PAUSED
+        elif field == "status" and value:
+            try:
+                project.status = ProjectStatus(value)
+            except ValueError:
+                pass
+
+    req.status = AdminReqStatus.ACCEPTED
+    create_notification(db, NotificationType.REQUEST_ACCEPTED, actor=requester, project=project)
+    db.commit()
+    return {"message": "Anfrage akzeptiert"}
+
+
+@router.post("/requests/{request_id}/reject")
+def reject_request(
+    request_id: int,
+    data: RequestRejection,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    req = db.get(AdminRequest, request_id)
+    if not req:
+        raise HTTPException(status_code=404, detail="Anfrage nicht gefunden")
+    if req.status != AdminReqStatus.PENDING:
+        raise HTTPException(status_code=400, detail="Anfrage ist nicht mehr ausstehend")
+
+    req.status = AdminReqStatus.REJECTED
+    if data.admin_note:
+        req.admin_note = data.admin_note
+
+    project = db.get(Project, req.project_id) if req.project_id else None
+    requester = db.get(User, req.requester_id)
+    create_notification(db, NotificationType.REQUEST_REJECTED, actor=requester, project=project)
+    db.commit()
+    return {"message": "Anfrage abgelehnt"}
 
 
 @router.get("/notifications")

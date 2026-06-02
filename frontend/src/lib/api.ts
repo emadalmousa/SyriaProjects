@@ -48,6 +48,7 @@ export const api = {
     toggleActive: (userId: number) =>
       request(`/users/${userId}/active`, { method: "PATCH" }),
     myInterests: () => request("/users/me/interests"),
+    myRequests: () => request("/users/me/requests"),
   },
   admin: {
     testDataStatus: () => request<{ exists: boolean; users: number; projects: number }>("/admin/test-data/status"),
@@ -62,6 +63,12 @@ export const api = {
       }),
     approveInterest: (id: number) => request(`/admin/interests/${id}/approve`, { method: "POST" }),
     rejectInterest: (id: number) => request(`/admin/interests/${id}/reject`, { method: "POST" }),
+    approveRequest: (id: number) => request(`/admin/requests/${id}/approve`, { method: "POST" }),
+    rejectRequest: (id: number, note?: string) =>
+      request(`/admin/requests/${id}/reject`, {
+        method: "POST",
+        body: JSON.stringify({ admin_note: note }),
+      }),
     notifications: (unreadOnly = false) =>
       request(`/admin/notifications${unreadOnly ? "?unread_only=true" : ""}`),
     markNotificationRead: (id: number) =>
@@ -79,6 +86,18 @@ export const api = {
     updateVisibility: (id: number, visibility: string) => request(`/projects/${id}/visibility`, { method: "PATCH", body: JSON.stringify({ visibility }) }),
     join: (projectId: number, amount: number) =>
       request(`/projects/${projectId}/join`, { method: "POST", body: JSON.stringify({ amount }) }),
+    withdrawParticipation: (projectId: number) =>
+      request(`/projects/${projectId}/participation`, { method: "DELETE" }),
+    changeParticipation: (projectId: number, data: { amount?: number; message?: string }) =>
+      request(`/projects/${projectId}/participation`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    changeRequest: (projectId: number, data: { field: string; value?: string }) =>
+      request(`/projects/${projectId}/change-request`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
     members: {
       list: (projectId: number) => request(`/projects/${projectId}/members`),
       add: (projectId: number, userId: number, project_role: string) =>

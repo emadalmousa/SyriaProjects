@@ -80,6 +80,7 @@ class InterestStatus(str, enum.Enum):
     PENDING = "PENDING"
     ACCEPTED = "ACCEPTED"
     REJECTED = "REJECTED"
+    WITHDRAWN = "WITHDRAWN"
 
 
 class MilestoneStatus(str, enum.Enum):

@@ -24,6 +24,10 @@ def create_notification(
         NotificationType.PROJECT_APPROVED: f"Projekt '{project_title}' wurde akzeptiert",
         NotificationType.PROJECT_REJECTED: f"Projekt '{project_title}' wurde abgelehnt",
         NotificationType.PROJECT_STATUS_CHANGED: f"Projektstatus von '{project_title}' geändert",
+        NotificationType.PARTICIPATION_WITHDRAWN: f"{actor_name} hat seine Teilnahme am Projekt '{project_title}' zurückgezogen",
+        NotificationType.CHANGE_REQUESTED: f"{actor_name} hat eine Änderungsanfrage für '{project_title}' gesendet",
+        NotificationType.REQUEST_ACCEPTED: f"Anfrage von {actor_name} für '{project_title}' wurde akzeptiert",
+        NotificationType.REQUEST_REJECTED: f"Anfrage von {actor_name} für '{project_title}' wurde abgelehnt",
     }
 
     notification = SystemNotification(

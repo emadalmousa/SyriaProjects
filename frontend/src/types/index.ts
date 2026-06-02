@@ -23,7 +23,7 @@ export type RiskLevel = "UNKNOWN" | "LOW" | "MEDIUM" | "HIGH";
 export type MilestoneStatus = "PLANNED" | "IN_PROGRESS" | "DONE" | "DELAYED" | "CANCELLED";
 export type ProjectUpdateVisibility = "PRIVATE" | "PUBLIC" | "INVESTORS_ONLY";
 export type InterestType = "INVESTMENT" | "SUPPORT" | "CONTACT";
-export type InterestStatus = "PENDING" | "ACCEPTED" | "REJECTED";
+export type InterestStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "WITHDRAWN";
 export type UserType = "PROJECT_SUBMITTER" | "INVESTOR" | "PARTNER" | "OTHER";
 
 export type ProjectCategory =
@@ -164,9 +164,31 @@ export interface PendingInterest {
   created_at: string;
 }
 
+export type RequestType =
+  | "CHANGE_PARTICIPATION"
+  | "WITHDRAW_PARTICIPATION"
+  | "CHANGE_PROJECT_DATA"
+  | "CHANGE_PROJECT_STATUS";
+
+export type RequestStatus = "PENDING" | "ACCEPTED" | "REJECTED";
+
+export interface AdminRequest {
+  id: number;
+  type: RequestType;
+  status: RequestStatus;
+  requester_name?: string;
+  project_id?: number;
+  project_title?: string;
+  interest_id?: number;
+  payload?: string;
+  admin_note?: string;
+  created_at: string;
+}
+
 export interface AdminTasks {
   idea_projects: AdminTask[];
   pending_interests: PendingInterest[];
+  pending_requests: AdminRequest[];
 }
 
 export interface UserInterest {

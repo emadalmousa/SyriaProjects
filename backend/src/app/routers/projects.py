@@ -167,6 +167,11 @@ def update_project(
     if not project:
         raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
     require_project_roles(current_user, db, project_id, [ProjectRole.PROJECT_OWNER, ProjectRole.PROJECT_ADMIN])
+    if not is_admin(current_user):
+        raise HTTPException(
+            status_code=403,
+            detail="Direkte Änderungen sind nicht erlaubt. Nutze /projects/{id}/change-request",
+        )
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(project, field, value)
     db.commit()
@@ -192,6 +197,11 @@ def update_status(
         current_user, db, project_id,
         [ProjectRole.PROJECT_OWNER, ProjectRole.PROJECT_ADMIN, ProjectRole.PROJECT_MANAGER],
     )
+    if not is_admin(current_user):
+        raise HTTPException(
+            status_code=403,
+            detail="Direkte Änderungen sind nicht erlaubt. Nutze /projects/{id}/change-request",
+        )
     project.status = data.status
     db.commit()
     db.refresh(project)
@@ -212,6 +222,11 @@ def update_visibility(
         current_user, db, project_id,
         [ProjectRole.PROJECT_OWNER, ProjectRole.PROJECT_ADMIN, ProjectRole.PROJECT_MANAGER],
     )
+    if not is_admin(current_user):
+        raise HTTPException(
+            status_code=403,
+            detail="Direkte Änderungen sind nicht erlaubt. Nutze /projects/{id}/change-request",
+        )
     project.visibility = data.visibility
     db.commit()
     db.refresh(project)
