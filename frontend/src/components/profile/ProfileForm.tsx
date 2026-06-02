@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
-import type { User, Project } from "@/types";
+import type { User, Project, UserInterest } from "@/types";
 import { Alert, Button, Avatar, PageSpinner } from "@/components/ui";
 import { InputField, SelectField } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
@@ -20,6 +20,7 @@ const COUNTRIES = [
 export function ProfileForm() {
   const router = useRouter();
   const t = useTranslations("profile");
+  const tProject = useTranslations("project");
 
   const [user, setUser]       = useState<User | null>(null);
   const [form, setForm]       = useState({ first_name: "", last_name: "", phone: "", country: "" });
@@ -31,6 +32,7 @@ export function ProfileForm() {
 
   const [projects, setProjects]         = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
+  const [participations, setParticipations] = useState<UserInterest[]>([]);
 
   useEffect(() => {
     api.users.me()
@@ -45,6 +47,10 @@ export function ProfileForm() {
       .then((p) => setProjects(p as Project[]))
       .catch(() => {})
       .finally(() => setProjectsLoading(false));
+
+    api.users.myInterests()
+      .then((data) => setParticipations(data as UserInterest[]))
+      .catch(() => {});
   }, [router]);
 
   function set(field: string, value: string) { setForm((f) => ({ ...f, [field]: value })); }
@@ -130,58 +136,105 @@ export function ProfileForm() {
           {/* Divider */}
           <div className="hidden lg:block w-px bg-line self-stretch" />
 
-          {/* Right: My Projects */}
-          <div className="flex flex-col">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-lg font-semibold text-[var(--clr-text)]">
-                {t("myProjects")}
-                {projects.length > 0 && (
-                  <span className="ms-2 rounded-pill bg-brand/10 px-2 py-0.5 text-sm font-bold text-brand">
-                    {projects.length}
-                  </span>
-                )}
-              </h2>
-              <Link href="/projects/create">
-                <Button size="sm">{t("newProject")}</Button>
-              </Link>
-            </div>
+          {/* Right: My Projects + My Participations */}
+          <div className="flex flex-col gap-6">
 
-            {projectsLoading ? (
-              <div className="flex flex-1 items-center justify-center py-16">
-                <div className="h-6 w-6 animate-spin rounded-full border-[3px] border-brand border-t-transparent" />
-              </div>
-            ) : projects.length === 0 ? (
-              <div className="flex flex-1 flex-col items-center justify-center rounded-card border border-dashed border-line bg-surface py-16" style={{ boxShadow: "var(--sh-sm)" }}>
-                <span className="mb-3 text-4xl">{"\u{1F4CB}"}</span>
-                <p className="font-medium text-[var(--clr-text-2)]">{t("noProjects")}</p>
-                <Link href="/projects/create" className="mt-4 text-sm font-semibold text-brand hover:underline">
-                  {t("createFirst")}
+            {/* My Projects */}
+            <div className="flex flex-col">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-display text-lg font-semibold text-[var(--clr-text)]">
+                  {t("myProjects")}
+                  {projects.length > 0 && (
+                    <span className="ms-2 rounded-pill bg-brand/10 px-2 py-0.5 text-sm font-bold text-brand">
+                      {projects.length}
+                    </span>
+                  )}
+                </h2>
+                <Link href="/projects/create">
+                  <Button size="sm">{t("newProject")}</Button>
                 </Link>
               </div>
-            ) : (
-              <div className="flex flex-col gap-3 overflow-y-auto">
-                {projects.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/projects/${p.id}`}
-                    className="group rounded-card border border-line bg-surface p-4 transition-all hover:border-brand/40 hover:-translate-y-px"
-                    style={{ boxShadow: "var(--sh-sm)" }}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="font-semibold text-[var(--clr-text)] group-hover:text-brand transition-colors truncate">
-                          {p.title}
-                        </h3>
-                        {p.short_description && (
-                          <p className="mt-1 text-xs text-[var(--clr-text-2)] line-clamp-2">{p.short_description}</p>
-                        )}
-                      </div>
-                      <StatusBadge status={p.status} />
-                    </div>
+
+              {projectsLoading ? (
+                <div className="flex flex-1 items-center justify-center py-16">
+                  <div className="h-6 w-6 animate-spin rounded-full border-[3px] border-brand border-t-transparent" />
+                </div>
+              ) : projects.length === 0 ? (
+                <div className="flex flex-1 flex-col items-center justify-center rounded-card border border-dashed border-line bg-surface py-16" style={{ boxShadow: "var(--sh-sm)" }}>
+                  <span className="mb-3 text-4xl">{"\u{1F4CB}"}</span>
+                  <p className="font-medium text-[var(--clr-text-2)]">{t("noProjects")}</p>
+                  <Link href="/projects/create" className="mt-4 text-sm font-semibold text-brand hover:underline">
+                    {t("createFirst")}
                   </Link>
-                ))}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 overflow-y-auto">
+                  {projects.map((p) => (
+                    <Link
+                      key={p.id}
+                      href={`/projects/${p.id}`}
+                      className="group rounded-card border border-line bg-surface p-4 transition-all hover:border-brand/40 hover:-translate-y-px"
+                      style={{ boxShadow: "var(--sh-sm)" }}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-[var(--clr-text)] group-hover:text-brand transition-colors truncate">
+                            {p.title}
+                          </h3>
+                          {p.short_description && (
+                            <p className="mt-1 text-xs text-[var(--clr-text-2)] line-clamp-2">{p.short_description}</p>
+                          )}
+                        </div>
+                        <StatusBadge status={p.status} />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* My Participations */}
+            <div className="rounded-[var(--radius-card)] border border-[var(--clr-line)] bg-[var(--clr-surface)] p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <h2 className="text-base font-semibold text-[var(--clr-text)]">
+                  {tProject("myParticipations")}
+                </h2>
+                {participations.length > 0 && (
+                  <span className="rounded-full bg-[var(--clr-brand)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--clr-brand)]">
+                    {participations.length}
+                  </span>
+                )}
               </div>
-            )}
+              {participations.length === 0 ? (
+                <p className="text-sm text-[var(--clr-text-2)]">{tProject("noParticipations")}</p>
+              ) : (
+                <ul className="space-y-3">
+                  {participations.map((p) => (
+                    <li key={p.id} className="flex items-start justify-between gap-3 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface-2)] p-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-[var(--clr-text)]">{p.project_title}</p>
+                        {p.amount && (
+                          <p className="text-xs text-[var(--clr-text-2)]">{p.amount.toLocaleString()} €</p>
+                        )}
+                        <p className="text-xs text-[var(--clr-text-3)]">
+                          {new Date(p.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        p.status === "ACCEPTED"
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : p.status === "REJECTED"
+                          ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                      }`}>
+                        {p.status === "ACCEPTED" ? tProject("joinApproved") : p.status === "REJECTED" ? tProject("joinRejected") : tProject("joinPending")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
           </div>
 
         </div>

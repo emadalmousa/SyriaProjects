@@ -28,6 +28,15 @@
     "create": "Erstellen"
   },
   "or": "oder",
+  "tasks": "Aufgaben",
+  "notifications": "Meldungen",
+  "users": "Nutzer",
+  "approve": "Akzeptieren",
+  "reject": "Ablehnen",
+  "markAllRead": "Alle als gelesen",
+  "noTasks": "Keine offenen Aufgaben",
+  "noNotifications": "Keine Meldungen",
+  "unread": "Ungelesen",
   "home": {
     "subtitle": "Projektmanagement-Plattform",
     "register": "Registrieren",

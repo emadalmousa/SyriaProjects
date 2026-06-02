@@ -28,6 +28,15 @@
     "create": "إنشاء"
   },
   "or": "أو",
+  "tasks": "المهام",
+  "notifications": "الإشعارات",
+  "users": "المستخدمون",
+  "approve": "قبول",
+  "reject": "رفض",
+  "markAllRead": "تحديد الكل كمقروء",
+  "noTasks": "لا توجد مهام",
+  "noNotifications": "لا توجد إشعارات",
+  "unread": "غير مقروء",
   "home": {
     "subtitle": "منصة إدارة المشاريع",
     "register": "تسجيل",

@@ -1,11 +1,14 @@
 from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.helpers import calculate_funding_progress
+from app.core.notifications import create_notification
 from app.core.permissions import is_admin, require_project_roles
+from app.models.notification import NotificationType
 from app.models.project import (
-    InterestStatus, Project, ProjectBudgetItem, ProjectInterest,
+    InterestStatus, InterestType, Project, ProjectBudgetItem, ProjectInterest,
     ProjectMember, ProjectMilestone, ProjectRole, ProjectStatus,
     ProjectUpdate as ProjectUpdateModel, ProjectVisibility,
 )
@@ -112,6 +115,8 @@ def create_project(
     db.add(member)
     db.commit()
     db.refresh(project)
+    create_notification(db, NotificationType.PROJECT_CREATED, actor=current_user, project=project)
+    db.commit()
     result = ProjectRead.model_validate(project).model_dump()
     result["funding_progress"] = calculate_funding_progress(
         project.total_budget or Decimal("0"), project.own_capital or Decimal("0")
@@ -257,9 +262,21 @@ def remove_member(
     db.commit()
 
 
+class JoinRequest(BaseModel):
+    amount: Decimal
+
+    @field_validator("amount")
+    @classmethod
+    def min_amount(cls, v: Decimal) -> Decimal:
+        if v < Decimal("100"):
+            raise ValueError("Mindestbetrag ist 100 €")
+        return v
+
+
 @router.post("/{project_id}/join", status_code=status.HTTP_201_CREATED)
 def join_project(
     project_id: int,
+    data: JoinRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -268,20 +285,26 @@ def join_project(
         raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
     if project.status not in JOIN_ALLOWED_STATUSES:
         raise HTTPException(status_code=403, detail="Teilnahme nur bei aktiven Projekten möglich")
-    existing = db.query(ProjectMember).filter(
-        ProjectMember.project_id == project_id,
-        ProjectMember.user_id == current_user.id,
+    existing = db.query(ProjectInterest).filter(
+        ProjectInterest.project_id == project_id,
+        ProjectInterest.user_id == current_user.id,
+        ProjectInterest.interest_type == InterestType.INVESTMENT,
+        ProjectInterest.status.in_([InterestStatus.PENDING, InterestStatus.ACCEPTED]),
     ).first()
     if existing:
-        raise HTTPException(status_code=409, detail="Bereits Mitglied")
-    member = ProjectMember(
+        raise HTTPException(status_code=409, detail="Bereits Mitglied oder Anfrage läuft")
+    interest = ProjectInterest(
         project_id=project_id,
         user_id=current_user.id,
-        project_role=ProjectRole.PROJECT_INVESTOR,
+        interest_type=InterestType.INVESTMENT,
+        status=InterestStatus.PENDING,
+        amount=data.amount,
     )
-    db.add(member)
+    db.add(interest)
+    db.flush()
+    create_notification(db, NotificationType.JOIN_REQUESTED, actor=current_user, project=project, interest=interest)
     db.commit()
-    return {"message": "Erfolgreich beigetreten"}
+    return {"message": "Anfrage gesendet", "status": "PENDING"}
 
 
 @router.post("/{project_id}/interests", response_model=ProjectInterestResponse, status_code=status.HTTP_201_CREATED)

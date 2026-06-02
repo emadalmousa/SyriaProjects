@@ -1,6 +1,7 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
-from pydantic import BaseModel, field_validator
+from typing import Optional
+from pydantic import BaseModel, ConfigDict, field_validator
 from app.models.project import (
     InterestStatus, InterestType, MilestoneStatus, ProjectCategory,
     ProjectRole, ProjectStatus, ProjectUpdateVisibility, ProjectVisibility,
@@ -202,6 +203,7 @@ class ProjectMemberResponse(BaseModel):
 class ProjectInterestCreate(BaseModel):
     interest_type: InterestType
     message: str | None = None
+    amount: Optional[Decimal] = None
 
 
 class ProjectInterestResponse(BaseModel):
@@ -210,9 +212,36 @@ class ProjectInterestResponse(BaseModel):
     user_id: int
     interest_type: InterestType
     message: str | None
+    amount: Optional[Decimal] = None
     status: InterestStatus
 
     model_config = {"from_attributes": True}
+
+
+class UserInterestResponse(BaseModel):
+    id: int
+    project_id: int
+    project_title: str
+    project_status: Optional[str] = None
+    amount: Optional[Decimal] = None
+    status: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationResponse(BaseModel):
+    id: int
+    type: str
+    message: str
+    actor_name: Optional[str] = None
+    project_id: Optional[int] = None
+    project_title: Optional[str] = None
+    interest_id: Optional[int] = None
+    is_read: bool
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class InterestStatusUpdate(BaseModel):

@@ -21,7 +21,10 @@ export function ProjectDetailView() {
   const [milestones, setMilestones]   = useState<ProjectMilestone[]>([]);
   const [updates, setUpdates]         = useState<ProjectUpdate[]>([]);
   const [joining, setJoining] = useState(false);
-  const [joined, setJoined]   = useState(false);
+  const [showJoinForm, setShowJoinForm] = useState(false);
+  const [joinAmount, setJoinAmount] = useState("");
+  const [joinAmountError, setJoinAmountError] = useState("");
+  const [joinStatus, setJoinStatus] = useState<"idle" | "pending" | "accepted" | "rejected">("idle");
 
   useEffect(() => {
     Promise.all([
@@ -40,14 +43,22 @@ export function ProjectDetailView() {
   }, [id, router]);
 
   async function handleJoin() {
+    const amount = parseFloat(joinAmount);
+    if (isNaN(amount) || amount < 100) {
+      setJoinAmountError(t("joinAmountMin"));
+      return;
+    }
     setJoining(true);
+    setJoinAmountError("");
     try {
-      await api.projects.join(id);
-      setJoined(true);
+      await api.projects.join(id, amount);
+      setJoinStatus("pending");
+      setShowJoinForm(false);
     } catch (err: unknown) {
       const e = err as { status?: number; message?: string };
-      if (e?.status === 409 || e?.message?.includes("409")) {
-        setJoined(true); // already a member
+      if (e?.status === 409 || String(err).includes("409") || e?.message?.includes("409")) {
+        setJoinStatus("pending");
+        setShowJoinForm(false);
       }
     } finally {
       setJoining(false);
@@ -80,17 +91,52 @@ export function ProjectDetailView() {
               )}
               {project.status === "ACTIVE" && (
                 <div className="mt-4">
-                  {joined ? (
-                    <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                      {t("joinSuccess")}
+                  {joinStatus === "pending" ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-sm font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                      {"⏳"} {t("joinPending")}
                     </span>
+                  ) : joinStatus === "accepted" ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1.5 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                      {"✓"} {t("joinApproved")}
+                    </span>
+                  ) : showJoinForm ? (
+                    <div className="flex flex-col gap-2 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface-2)] p-4">
+                      <label className="text-sm font-medium text-[var(--clr-text)]">
+                        {t("joinAmount")}
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          min="100"
+                          value={joinAmount}
+                          onChange={e => { setJoinAmount(e.target.value); setJoinAmountError(""); }}
+                          placeholder={t("joinAmountPlaceholder")}
+                          className="flex-1 rounded-lg border border-[var(--clr-line)] bg-[var(--clr-bg)] px-3 py-2 text-sm outline-none focus:border-[var(--clr-brand)]"
+                        />
+                        <button
+                          onClick={handleJoin}
+                          disabled={joining}
+                          className="rounded-lg bg-[var(--clr-brand)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                        >
+                          {joining ? t("joining") : t("join")}
+                        </button>
+                        <button
+                          onClick={() => setShowJoinForm(false)}
+                          className="rounded-lg border border-[var(--clr-line)] px-3 py-2 text-sm text-[var(--clr-text-2)] hover:bg-[var(--clr-surface-2)]"
+                        >
+                          {"✕"}
+                        </button>
+                      </div>
+                      {joinAmountError && (
+                        <p className="text-xs text-red-500">{joinAmountError}</p>
+                      )}
+                    </div>
                   ) : (
                     <button
-                      onClick={handleJoin}
-                      disabled={joining}
-                      className="rounded-lg bg-[var(--clr-brand)] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                      onClick={() => setShowJoinForm(true)}
+                      className="rounded-lg bg-[var(--clr-brand)] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
                     >
-                      {joining ? t("joining") : t("join")}
+                      {t("join")}
                     </button>
                   )}
                 </div>

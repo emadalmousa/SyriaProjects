@@ -8,7 +8,9 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.email import EmailService, get_email_service
+from app.core.notifications import create_notification
 from app.core.security import create_access_token, hash_password, verify_password
+from app.models.notification import NotificationType
 from app.models.token import AuthToken, TokenType
 from app.models.user import GlobalRole, User
 from app.schemas.auth import (
@@ -87,6 +89,8 @@ def register(
         db.commit()
 
     db.refresh(user)
+    create_notification(db, NotificationType.USER_REGISTERED, actor=user)
+    db.commit()
     email_svc.send_verification_email(user.email, token)
     return user
 

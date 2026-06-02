@@ -160,6 +160,7 @@ class ProjectInterest(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     interest_type = Column(Enum(InterestType), nullable=False)
     message = Column(Text)
+    amount = Column(Numeric(12, 2), nullable=True)
     status = Column(Enum(InterestStatus), default=InterestStatus.PENDING, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

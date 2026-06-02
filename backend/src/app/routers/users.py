@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.permissions import is_admin
 from app.core.security import decode_access_token
+from app.models.project import Project, ProjectInterest, InterestType
 from app.models.user import User
 from app.schemas.user import UserProfileUpdate, UserResponse, UserRoleUpdate
 
@@ -68,6 +69,35 @@ def list_users(db: Session = Depends(get_db), current_user: User = Depends(get_c
     if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="Only admins can list users")
     return db.query(User).all()
+
+
+@router.get("/me/interests")
+def get_my_interests(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    interests = (
+        db.query(ProjectInterest)
+        .filter(
+            ProjectInterest.user_id == current_user.id,
+            ProjectInterest.interest_type == InterestType.INVESTMENT,
+        )
+        .order_by(ProjectInterest.created_at.desc())
+        .all()
+    )
+    result = []
+    for i in interests:
+        project = db.get(Project, i.project_id)
+        result.append({
+            "id": i.id,
+            "project_id": i.project_id,
+            "project_title": project.title if project else "Unbekannt",
+            "project_status": project.status if project else None,
+            "amount": float(i.amount) if i.amount else None,
+            "status": i.status,
+            "created_at": i.created_at.isoformat(),
+        })
+    return result
 
 
 @router.patch("/{user_id}/active", response_model=UserResponse)

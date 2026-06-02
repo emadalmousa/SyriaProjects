@@ -28,6 +28,15 @@
     "create": "Create"
   },
   "or": "or",
+  "tasks": "Tasks",
+  "notifications": "Notifications",
+  "users": "Users",
+  "approve": "Approve",
+  "reject": "Reject",
+  "markAllRead": "Mark all read",
+  "noTasks": "No open tasks",
+  "noNotifications": "No notifications",
+  "unread": "Unread",
   "home": {
     "subtitle": "Project Management Platform",
     "register": "Register",

@@ -130,3 +130,51 @@ export interface TokenResponse {
   access_token: string;
   token_type: string;
 }
+
+export interface SystemNotification {
+  id: number;
+  type: string;
+  message: string;
+  actor_name?: string;
+  project_id?: number;
+  project_title?: string;
+  interest_id?: number;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface AdminTask {
+  id: number;
+  title: string;
+  short_description?: string;
+  category?: string;
+  city?: string;
+  created_at: string;
+  creator?: string;
+}
+
+export interface PendingInterest {
+  id: number;
+  project_id: number;
+  project_title: string;
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  amount?: number;
+  created_at: string;
+}
+
+export interface AdminTasks {
+  idea_projects: AdminTask[];
+  pending_interests: PendingInterest[];
+}
+
+export interface UserInterest {
+  id: number;
+  project_id: number;
+  project_title: string;
+  project_status?: string;
+  amount?: number;
+  status: InterestStatus;
+  created_at: string;
+}

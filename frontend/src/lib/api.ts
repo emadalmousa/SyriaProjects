@@ -47,11 +47,26 @@ export const api = {
       request(`/users/${userId}/role`, { method: "PATCH", body: JSON.stringify({ global_role }) }),
     toggleActive: (userId: number) =>
       request(`/users/${userId}/active`, { method: "PATCH" }),
+    myInterests: () => request("/users/me/interests"),
   },
   admin: {
     testDataStatus: () => request<{ exists: boolean; users: number; projects: number }>("/admin/test-data/status"),
     seedTestData: () => request<{ status: string; users: number; projects: number }>("/admin/test-data/seed", { method: "POST" }),
     deleteTestData: () => request<{ status: string; users_deleted: number; projects_deleted: number }>("/admin/test-data", { method: "DELETE" }),
+    tasks: () => request("/admin/tasks"),
+    approveProject: (id: number) => request(`/admin/projects/${id}/approve`, { method: "POST" }),
+    rejectProject: (id: number, reason?: string) =>
+      request(`/admin/projects/${id}/reject`, {
+        method: "POST",
+        body: JSON.stringify({ rejection_reason: reason }),
+      }),
+    approveInterest: (id: number) => request(`/admin/interests/${id}/approve`, { method: "POST" }),
+    rejectInterest: (id: number) => request(`/admin/interests/${id}/reject`, { method: "POST" }),
+    notifications: (unreadOnly = false) =>
+      request(`/admin/notifications${unreadOnly ? "?unread_only=true" : ""}`),
+    markNotificationRead: (id: number) =>
+      request(`/admin/notifications/${id}/read`, { method: "PATCH" }),
+    markAllRead: () => request("/admin/notifications/read-all", { method: "POST" }),
   },
   projects: {
     listPublic: () => request("/projects/public"),
@@ -62,8 +77,8 @@ export const api = {
     update: (id: number, data: object) => request(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     updateStatus: (id: number, status: string) => request(`/projects/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
     updateVisibility: (id: number, visibility: string) => request(`/projects/${id}/visibility`, { method: "PATCH", body: JSON.stringify({ visibility }) }),
-    join: (projectId: number) =>
-      request(`/projects/${projectId}/join`, { method: "POST" }),
+    join: (projectId: number, amount: number) =>
+      request(`/projects/${projectId}/join`, { method: "POST", body: JSON.stringify({ amount }) }),
     members: {
       list: (projectId: number) => request(`/projects/${projectId}/members`),
       add: (projectId: number, userId: number, project_role: string) =>
