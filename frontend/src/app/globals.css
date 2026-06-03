@@ -98,3 +98,12 @@ body {
 [dir="rtl"] body {
   font-family: var(--font-arabic, "Noto Sans Arabic"), system-ui, sans-serif;
 }
+
+/* LTR inputs/selects stay left-aligned even in RTL context */
+input[dir="ltr"],
+input[dir="ltr"]::placeholder,
+select[dir="ltr"] {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: embed;
+}

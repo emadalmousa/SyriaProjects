@@ -14,6 +14,8 @@
   "sendingReset": "جارٍ الإرسال...",
   "resetSent": "تم إرسال بريد إعادة التعيين إلى {email}",
   "myProjects": "مشاريعي",
+  "tabOwn": "مشاريعي",
+  "tabJoined": "مشاركاتي في المشاريع",
   "newProject": "+ جديد",
   "noProjects": "لا توجد مشاريع بعد",
   "createFirst": "أنشئ مشروعك الأول ←"

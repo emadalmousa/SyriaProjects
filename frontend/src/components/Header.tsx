@@ -43,6 +43,7 @@ export default function Header() {
 
   return (
     <header
+      dir="ltr"
       className="z-50 shrink-0 border-b border-line bg-surface/95 backdrop-blur-sm"
       style={{ height: "var(--header-h)", boxShadow: "var(--sh-sm)" }}
     >

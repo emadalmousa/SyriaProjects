@@ -83,6 +83,7 @@ export const api = {
     listPublic: () => request("/projects/public"),
     list: () => request("/projects/"),
     my: () => request("/projects/my"),
+    myParticipations: () => request("/projects/my-participations"),
     create: (data: object) => request("/projects/", { method: "POST", body: JSON.stringify(data) }),
     get: (id: number) => request(`/projects/${id}`),
     update: (id: number, data: object) => request(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(data) }),

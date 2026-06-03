@@ -1,10 +1,22 @@
 "use client";
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { Alert, Button } from "@/components/ui";
 import { InputField, SelectField, TextareaField } from "@/components/ui";
+
+const SYRIAN_GOV_EN = [
+  "Damascus", "Rural Damascus", "Aleppo", "Homs", "Hama",
+  "Latakia", "Tartus", "Deir ez-Zor", "Raqqa", "Idlib",
+  "Daraa", "As-Suwayda", "Al-Hasakah", "Quneitra",
+];
+
+const SYRIAN_GOV_AR = [
+  "دمشق", "ريف دمشق", "حلب", "حمص", "حماة",
+  "اللاذقية", "طرطوس", "دير الزور", "الرقة", "إدلب",
+  "درعا", "السويداء", "الحسكة", "القنيطرة",
+];
 import { PageHeader, SectionCard } from "@/components/layout";
 import { ALL_CATEGORIES } from "@/components/project";
 
@@ -18,6 +30,8 @@ export function CreateProjectForm() {
   const router = useRouter();
   const t = useTranslations("project.createForm");
   const tCat = useTranslations("project.categoryFull");
+  const locale = useLocale();
+  const governorates = locale === "ar" ? SYRIAN_GOV_AR : SYRIAN_GOV_EN;
   const [error, setError]   = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -88,9 +102,12 @@ export function CreateProjectForm() {
           {/* 2. Standort */}
           <SectionCard title={t("location")} step={2}>
             <div className="grid grid-cols-2 gap-4">
-              <InputField label={t("country")} type="text" value={location.country} onChange={(e) => setLocation({ ...location, country: e.target.value })} />
-              <InputField label={t("city")} type="text" value={location.city} onChange={(e) => setLocation({ ...location, city: e.target.value })} placeholder={t("cityPlaceholder")} required />
-              <InputField label={t("district")} type="text" value={location.district} onChange={(e) => setLocation({ ...location, district: e.target.value })} placeholder={t("districtPlaceholder")} />
+              <InputField label={t("country")} type="text" value={location.country} readOnly className="opacity-70 cursor-not-allowed" ltr />
+              <SelectField label={locale === "ar" ? "المحافظة *" : "Bundesland *"} value={location.city} onChange={(e) => setLocation({ ...location, city: e.target.value })} required>
+                <option value="">{locale === "ar" ? "اختر المحافظة" : "Bitte wählen"}</option>
+                {governorates.map((g) => <option key={g} value={g}>{g}</option>)}
+              </SelectField>
+              <InputField label={locale === "ar" ? "المدينة" : "Stadt"} type="text" value={location.district} onChange={(e) => setLocation({ ...location, district: e.target.value })} required ltr />
               <InputField label={t("address")} type="text" value={location.address_text} onChange={(e) => setLocation({ ...location, address_text: e.target.value })} />
             </div>
           </SectionCard>

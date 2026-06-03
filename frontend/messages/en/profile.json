@@ -14,6 +14,8 @@
   "sendingReset": "Sending...",
   "resetSent": "Reset email sent to {email}",
   "myProjects": "My Projects",
+  "tabOwn": "My Projects",
+  "tabJoined": "My Participations",
   "newProject": "+ New",
   "noProjects": "No projects yet",
   "createFirst": "Create first project →"

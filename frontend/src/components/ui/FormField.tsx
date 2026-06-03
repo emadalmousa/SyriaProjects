@@ -2,7 +2,7 @@ import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes 
 
 const labelCls = "mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--clr-text-2)]";
 const inputCls = "w-full rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm text-[var(--clr-text)] placeholder-[var(--clr-text-3)] outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:bg-surface disabled:opacity-60 disabled:cursor-not-allowed"
-const ltrInputCls = `${inputCls} [direction:ltr] [text-align:left] placeholder:[text-align:left] placeholder:[direction:ltr]`;
+const ltrInputCls = inputCls;
 
 interface FieldWrapProps {
   label: string;
@@ -54,7 +54,7 @@ interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
 export function SelectField({ label, wrapClass = "", children, className = "", ...props }: SelectFieldProps) {
   return (
     <FieldWrap label={label} className={wrapClass}>
-      <select className={`${inputCls} ${className}`} {...props}>
+      <select dir="ltr" className={`${ltrInputCls} ${className}`} {...props}>
         {children}
       </select>
     </FieldWrap>
@@ -97,14 +97,14 @@ export function PasswordField({ label, wrapClass = "", show, onToggleShow, requi
           type={show ? "text" : "password"}
           required={required}
           dir="ltr"
-          className={`${ltrInputCls} pe-10 ${className}`}
+          className={`${ltrInputCls} pr-10 ${className}`}
           {...props}
         />
         <button
           type="button"
           onClick={onToggleShow}
           tabIndex={-1}
-          className="absolute end-3 top-1/2 -translate-y-1/2 text-[var(--clr-text-3)] hover:text-[var(--clr-text-2)]"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--clr-text-3)] hover:text-[var(--clr-text-2)]"
           aria-label={show ? "Hide password" : "Show password"}
         >
           {show ? (

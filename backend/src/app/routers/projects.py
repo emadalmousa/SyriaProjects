@@ -81,12 +81,25 @@ def list_projects(db: Session = Depends(get_db), current_user: User = Depends(ge
 
 @router.get("/my", response_model=list[ProjectListItem])
 def my_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    projects = db.query(Project).filter(Project.created_by_user_id == current_user.id).all()
+    result = []
+    for p in projects:
+        item = ProjectListItem.model_validate(p).model_dump()
+        item["funding_progress"] = calculate_funding_progress(
+            p.total_budget or Decimal("0"), p.own_capital or Decimal("0")
+        )
+        result.append(item)
+    return result
+
+
+@router.get("/my-participations", response_model=list[ProjectListItem])
+def my_participations(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     memberships = db.query(ProjectMember).filter(ProjectMember.user_id == current_user.id).all()
-    project_ids = {m.project_id for m in memberships}
-    owned = db.query(Project).filter(Project.created_by_user_id == current_user.id).all()
-    for p in owned:
-        project_ids.add(p.id)
-    projects = db.query(Project).filter(Project.id.in_(project_ids)).all()
+    project_ids = [m.project_id for m in memberships]
+    projects = db.query(Project).filter(
+        Project.id.in_(project_ids),
+        Project.created_by_user_id != current_user.id,
+    ).all()
     result = []
     for p in projects:
         item = ProjectListItem.model_validate(p).model_dump()
@@ -138,11 +151,12 @@ def get_project(
         ProjectMember.user_id == current_user.id,
     ).first()
     is_member = member is not None or project.created_by_user_id == current_user.id
-    # Admin-only statuses: deny non-admins regardless of membership
-    if project.status in ADMIN_ONLY_STATUSES and not is_admin(current_user):
+    is_owner = project.created_by_user_id == current_user.id
+    # Admin-only statuses: only admins and the owner can see
+    if project.status in ADMIN_ONLY_STATUSES and not is_admin(current_user) and not is_owner:
         raise HTTPException(status_code=403, detail="Kein Zugriff")
     # For public statuses, non-members need public visibility
-    if not is_admin(current_user) and not is_member:
+    if not is_admin(current_user) and not is_member and not is_owner:
         if project.status not in PUBLIC_STATUSES:
             raise HTTPException(status_code=403, detail="Kein Zugriff")
     fp = calculate_funding_progress(
