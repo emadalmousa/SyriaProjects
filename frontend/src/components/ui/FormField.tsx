@@ -1,7 +1,8 @@
 import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 const labelCls = "mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--clr-text-2)]";
-const inputCls = "w-full rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm text-[var(--clr-text)] placeholder-[var(--clr-text-3)] outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:bg-surface disabled:opacity-60 disabled:cursor-not-allowed";
+const inputCls = "w-full rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm text-[var(--clr-text)] placeholder-[var(--clr-text-3)] outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:bg-surface disabled:opacity-60 disabled:cursor-not-allowed"
+const ltrInputCls = `${inputCls} [direction:ltr] [text-align:left] placeholder:[text-align:left] placeholder:[direction:ltr]`;
 
 interface FieldWrapProps {
   label: string;
@@ -26,14 +27,16 @@ export function FieldWrap({ label, required, children, className = "" }: FieldWr
 interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   wrapClass?: string;
+  ltr?: boolean;
 }
 
-export function InputField({ label, wrapClass = "", required, className = "", ...props }: InputFieldProps) {
+export function InputField({ label, wrapClass = "", required, className = "", ltr, ...props }: InputFieldProps) {
   return (
     <FieldWrap label={label} required={required} className={wrapClass}>
       <input
         required={required}
-        className={`${inputCls} ${className}`}
+        dir={ltr ? "ltr" : undefined}
+        className={`${ltr ? ltrInputCls : inputCls} ${className}`}
         {...props}
       />
     </FieldWrap>
@@ -93,7 +96,8 @@ export function PasswordField({ label, wrapClass = "", show, onToggleShow, requi
         <input
           type={show ? "text" : "password"}
           required={required}
-          className={`${inputCls} pe-10 ${className}`}
+          dir="ltr"
+          className={`${ltrInputCls} pe-10 ${className}`}
           {...props}
         />
         <button

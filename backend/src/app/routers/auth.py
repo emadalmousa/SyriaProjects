@@ -118,6 +118,15 @@ def verify_email(token: str, db: Session = Depends(get_db)):
         .first()
     )
     if not auth_token:
+        used_token = (
+            db.query(AuthToken)
+            .filter(AuthToken.token == token, AuthToken.token_type == TokenType.EMAIL_VERIFICATION)
+            .first()
+        )
+        if used_token:
+            user = db.query(User).filter(User.id == used_token.user_id).first()
+            if user and user.email_verified:
+                return MessageResponse(message="E-Mail-Adresse erfolgreich bestätigt")
         raise HTTPException(status_code=400, detail="Ungültiger oder bereits benutzter Token")
 
     # expires_at may be naive or aware depending on DB

@@ -72,11 +72,11 @@ export default function RegisterPage() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
-          <InputField label={t("firstName")} type="text" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} placeholder="Ahmad" required />
-          <InputField label={t("lastName")} type="text" value={form.last_name} onChange={(e) => set("last_name", e.target.value)} placeholder="Al-Halabi" required />
+          <InputField label={t("firstName")} type="text" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} placeholder="Ahmad" required ltr />
+          <InputField label={t("lastName")} type="text" value={form.last_name} onChange={(e) => set("last_name", e.target.value)} placeholder="Al-Halabi" required ltr />
         </div>
 
-        <InputField label={t("email")} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="deine@email.de" required />
+        <InputField label={t("email")} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="deine@email.de" required ltr />
 
         <div className="grid grid-cols-2 gap-3">
           <PasswordField label={t("password")} value={form.password} onChange={(e) => set("password", e.target.value)} show={showPw} onToggleShow={() => setShowPw((v) => !v)} required minLength={8} placeholder={"••••••••"} />
@@ -88,7 +88,7 @@ export default function RegisterPage() {
             <option value="">{t("countryPlaceholder")}</option>
             {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </SelectField>
-          <InputField label={t("phone")} type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+49 123 456789" />
+          <InputField label={t("phone")} type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+49 123 456789" ltr />
         </div>
 
         <label className="flex cursor-pointer items-start gap-3 text-sm text-[var(--clr-text-2)]">

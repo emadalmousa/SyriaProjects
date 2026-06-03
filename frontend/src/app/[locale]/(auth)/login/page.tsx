@@ -103,7 +103,7 @@ function LoginContent() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <InputField label={t("email")} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="deine@email.de" required />
+        <InputField label={t("email")} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="deine@email.de" required ltr />
         <PasswordField label={t("password")} value={password} onChange={(e) => setPassword(e.target.value)} show={showPassword} onToggleShow={() => setShowPassword((v) => !v)} required placeholder={"••••••••"} />
         <div className="text-end">
           <Link href="/forgot-password" className="text-xs font-semibold text-brand hover:underline">{t("forgotPassword")}</Link>
