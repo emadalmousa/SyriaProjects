@@ -86,12 +86,22 @@ def register(
             db, user.id, TokenType.EMAIL_VERIFICATION,
             timedelta(hours=settings.email_verification_expire_hours),
         )
+        db.flush()
+
+        try:
+            email_svc.send_verification_email(user.email, token)
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=503,
+                detail="Bestätigungs-E-Mail konnte nicht gesendet werden. Bitte versuche es später erneut.",
+            ) from e
+
         db.commit()
 
     db.refresh(user)
     create_notification(db, NotificationType.USER_REGISTERED, actor=user)
     db.commit()
-    email_svc.send_verification_email(user.email, token)
     return user
 
 
