@@ -98,11 +98,14 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify(data),
       }),
-    changeRequest: (projectId: number, data: { field: string; value?: string }) =>
+    changeRequest: (projectId: number, data: { field?: string; value?: string; changes?: { field: string; value: string | null }[] }) =>
       request(`/projects/${projectId}/change-request`, {
         method: "POST",
         body: JSON.stringify(data),
       }),
+    participants: (projectId: number) => request(`/projects/${projectId}/participants`),
+    removeParticipant: (projectId: number, interestId: number) =>
+      request(`/projects/${projectId}/participants/${interestId}`, { method: "DELETE" }),
     members: {
       list: (projectId: number) => request(`/projects/${projectId}/members`),
       add: (projectId: number, userId: number, project_role: string) =>

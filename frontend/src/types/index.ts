@@ -62,8 +62,22 @@ export interface ProjectListItem {
   funding_progress: number;
 }
 
+export interface Participant {
+  interest_id: number;
+  user_id: number;
+  full_name: string | null;
+  email: string;
+  phone: string | null;
+  country: string | null;
+  amount: number | null;
+  status: string;
+  joined_at: string | null;
+}
+
 export interface Project extends ProjectListItem {
   created_by_user_id: number;
+  created_at?: string | null;
+  address_text?: string | null;
   description: string;
   district: string | null;
   total_budget: number;

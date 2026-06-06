@@ -17,7 +17,7 @@ from app.routers.users import get_current_user
 from app.schemas.project import (
     InterestStatusUpdate, ProjectBudgetItemCreate, ProjectBudgetItemRead,
     ProjectBudgetItemUpdate, ProjectCreate, ProjectInterestCreate,
-    ProjectInterestResponse, ProjectListItem, ProjectMemberAdd,
+    ParticipantResponse, ProjectInterestResponse, ProjectListItem, ProjectMemberAdd,
     ProjectMemberResponse, ProjectMilestoneCreate, ProjectMilestoneRead,
     ProjectMilestoneUpdate, ProjectRead, ProjectReadAdmin, ProjectStatusUpdate,
     ProjectUpdate as ProjectUpdateSchema, ProjectUpdateCreate, ProjectUpdateRead,
@@ -361,6 +361,70 @@ def get_interests(
         [ProjectRole.PROJECT_OWNER, ProjectRole.PROJECT_ADMIN, ProjectRole.PROJECT_MANAGER],
     )
     return db.query(ProjectInterest).filter(ProjectInterest.project_id == project_id).all()
+
+
+@router.get("/{project_id}/participants", response_model=list[ParticipantResponse])
+def get_participants(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    project = db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    is_owner = project.created_by_user_id == current_user.id
+    if not is_owner and not is_admin(current_user):
+        require_project_roles(
+            current_user, db, project_id,
+            [ProjectRole.PROJECT_OWNER, ProjectRole.PROJECT_ADMIN, ProjectRole.PROJECT_MANAGER],
+        )
+    interests = db.query(ProjectInterest).filter(
+        ProjectInterest.project_id == project_id,
+        ProjectInterest.status.in_([InterestStatus.PENDING, InterestStatus.ACCEPTED]),
+    ).all()
+    result = []
+    for interest in interests:
+        user = db.get(User, interest.user_id)
+        if not user:
+            continue
+        result.append(ParticipantResponse(
+            interest_id=interest.id,
+            user_id=user.id,
+            full_name=user.full_name,
+            email=user.email,
+            phone=user.phone,
+            country=user.country,
+            amount=interest.amount,
+            status=interest.status.value,
+            joined_at=interest.created_at,
+        ))
+    return result
+
+
+
+@router.delete("/{project_id}/participants/{interest_id}", status_code=204)
+def remove_participant(
+    project_id: int,
+    interest_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    project = db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    if project.created_by_user_id != current_user.id and not is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Keine Berechtigung")
+    interest = db.get(ProjectInterest, interest_id)
+    if not interest or interest.project_id != project_id:
+        raise HTTPException(status_code=404, detail="Teilnehmer nicht gefunden")
+    member = db.query(ProjectMember).filter(
+        ProjectMember.project_id == project_id,
+        ProjectMember.user_id == interest.user_id,
+    ).first()
+    if member:
+        db.delete(member)
+    db.delete(interest)
+    db.commit()
 
 
 @router.patch("/{project_id}/interests/{interest_id}/status", response_model=ProjectInterestResponse)

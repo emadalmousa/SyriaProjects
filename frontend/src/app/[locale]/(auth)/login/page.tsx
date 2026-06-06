@@ -81,7 +81,7 @@ function LoginContent() {
         <Alert type="error" className="mb-4">{error}</Alert>
       ) : null}
 
-      {/* Google */}
+      {/* Google – temporarily disabled
       <button
         onClick={handleGoogle}
         disabled={googleLoading}
@@ -101,6 +101,7 @@ function LoginContent() {
         <span className="text-xs text-[var(--clr-text-3)]">{tc("or")}</span>
         <div className="flex-1 border-t border-line" />
       </div>
+      */}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <InputField label={t("email")} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="deine@email.de" required ltr />

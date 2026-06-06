@@ -37,7 +37,11 @@
   "withdrawRequestSent": "Withdrawal request sent.",
   "editParticipation": "Change amount",
   "changeRequestInfo": "Your change has been sent as a request and is awaiting admin review.",
-  "ownerChangeInfo": "As project creator, you cannot make this change directly. Your request has been sent to the admin.",
+  "ownerChangeInfo": "Your change request has been sent to the admin and is pending review.",
+  "editProject": "Edit",
+  "editPendingInfo": "Your changes will be sent as a request to the admin and applied only after approval.",
+  "editSendRequest": "Request changes",
+  "editError": "Error sending the request",
   "requestPending": "Request pending",
   "requestAccepted": "Request accepted",
   "requestRejected": "Request rejected",
@@ -192,6 +196,19 @@
     "required": "Required",
     "total": "Total",
     "milestones": "Milestones",
-    "updates": "Project updates"
+    "updates": "Project updates",
+    "projectDetails": "Further Information",
+    "createdAt": "Created on",
+    "startDate": "Start date",
+    "address": "Address",
+    "video": "Video",
+    "participants": "Participants",
+    "noParticipants": "No participants yet",
+    "participantName": "Name",
+    "participantCountry": "Country",
+    "participantAmount": "Amount",
+    "participantDate": "Date",
+    "participantStatus": "Status",
+    "removeParticipant": "Remove"
   }
 }

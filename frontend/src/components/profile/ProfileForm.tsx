@@ -277,10 +277,15 @@ export function ProfileForm() {
                 ) : (
                   <ul className="space-y-3">
                     {participations.map((p) => (
-                      <li key={p.id} className="flex flex-col gap-2 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface)] p-3" style={{ boxShadow: "var(--sh-sm)" }}>
+                      <li
+                        key={p.id}
+                        onClick={() => router.push(`/projects/${p.project_id}`)}
+                        className="group flex flex-col gap-2 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface)] p-3 transition-all hover:border-brand/40 hover:-translate-y-px cursor-pointer"
+                        style={{ boxShadow: "var(--sh-sm)" }}
+                      >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-[var(--clr-text)]">{p.project_title}</p>
+                            <p className="truncate text-sm font-medium text-[var(--clr-text)] group-hover:text-brand transition-colors">{p.project_title}</p>
                             {p.amount && (
                               <p className="text-xs text-[var(--clr-text-2)]">{p.amount.toLocaleString()} €</p>
                             )}
@@ -302,7 +307,7 @@ export function ProfileForm() {
                         </div>
 
                         {p.status === "ACCEPTED" && (
-                          <div className="mt-1 flex flex-wrap gap-2">
+                          <div className="mt-1 flex flex-wrap gap-2" onClick={e => e.stopPropagation()}>
                             {withdrawResult[p.project_id] === "pending" ? (
                               <span className="text-xs text-amber-600">{tProject("withdrawRequestSent")}</span>
                             ) : withdrawResult[p.project_id] === "change_sent" ? (

@@ -37,7 +37,11 @@
   "withdrawRequestSent": "تم إرسال طلب السحب.",
   "editParticipation": "تغيير المبلغ",
   "changeRequestInfo": "تم إرسال تغييرك كطلب وهو بانتظار مراجعة المسؤول.",
-  "ownerChangeInfo": "بصفتك منشئ المشروع، لا يمكنك إجراء هذا التغيير مباشرةً. تم إرسال طلبك إلى المسؤول.",
+  "ownerChangeInfo": "تم إرسال طلب التعديل إلى المسؤول وسيتم مراجعته.",
+  "editProject": "تعديل",
+  "editPendingInfo": "ستُرسل تعديلاتك كطلب إلى المسؤول وستُطبَّق فقط بعد موافقته.",
+  "editSendRequest": "إرسال طلب التعديل",
+  "editError": "حدث خطأ أثناء إرسال الطلب",
   "requestPending": "الطلب قيد الانتظار",
   "requestAccepted": "تم قبول الطلب",
   "requestRejected": "تم رفض الطلب",
@@ -192,6 +196,19 @@
     "required": "إلزامي",
     "total": "الإجمالي",
     "milestones": "المراحل",
-    "updates": "تحديثات المشروع"
+    "updates": "تحديثات المشروع",
+    "projectDetails": "معلومات إضافية",
+    "createdAt": "تاريخ الإنشاء",
+    "startDate": "تاريخ البدء",
+    "address": "العنوان",
+    "video": "فيديو",
+    "participants": "المشاركون",
+    "noParticipants": "لا يوجد مشاركون بعد",
+    "participantName": "الاسم",
+    "participantCountry": "البلد",
+    "participantAmount": "المبلغ",
+    "participantDate": "التاريخ",
+    "participantStatus": "الحالة",
+    "removeParticipant": "إزالة"
   }
 }

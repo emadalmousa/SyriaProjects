@@ -278,10 +278,17 @@ def approve_request(
         interest.status = InterestStatus.WITHDRAWN
 
     elif req.type == RequestType.CHANGE_PROJECT_DATA and project:
-        field = payload.get("field")
-        value = payload.get("value")
-        if field and hasattr(project, field):
-            setattr(project, field, value)
+        if "changes" in payload:
+            for change in payload["changes"]:
+                field = change.get("field")
+                value = change.get("value")
+                if field and hasattr(project, field):
+                    setattr(project, field, value)
+        else:
+            field = payload.get("field")
+            value = payload.get("value")
+            if field and hasattr(project, field):
+                setattr(project, field, value)
 
     elif req.type == RequestType.CHANGE_PROJECT_STATUS and project:
         field = payload.get("field")

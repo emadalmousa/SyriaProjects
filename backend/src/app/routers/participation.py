@@ -32,8 +32,9 @@ class ParticipationChangeRequest(BaseModel):
 
 
 class ProjectChangeRequest(BaseModel):
-    field: str
+    field: str | None = None
     value: str | None = None
+    changes: list[dict] | None = None
 
 
 @router.patch("/{project_id}/participation")
@@ -169,9 +170,13 @@ def project_change_request(
         raise HTTPException(status_code=403, detail="Nur Projekt-Ersteller können Änderungsanfragen stellen")
 
     status_fields = {"status", "cancel", "complete", "pause"}
-    req_type = RequestType.CHANGE_PROJECT_STATUS if data.field in status_fields else RequestType.CHANGE_PROJECT_DATA
 
-    payload = json.dumps({"field": data.field, "value": data.value})
+    if data.changes is not None:
+        req_type = RequestType.CHANGE_PROJECT_DATA
+        payload = json.dumps({"changes": data.changes})
+    else:
+        req_type = RequestType.CHANGE_PROJECT_STATUS if data.field in status_fields else RequestType.CHANGE_PROJECT_DATA
+        payload = json.dumps({"field": data.field, "value": data.value})
     req = AdminRequest(
         type=req_type,
         requester_id=current_user.id,

@@ -37,7 +37,11 @@
   "withdrawRequestSent": "Anfrage zur Beendigung wurde gesendet.",
   "editParticipation": "Betrag ändern",
   "changeRequestInfo": "Deine Änderung wurde als Anfrage gesendet und wartet auf die Prüfung durch den Admin.",
-  "ownerChangeInfo": "Als Projekt-Ersteller kannst du diese Änderung nicht direkt durchführen. Deine Anfrage wurde an den Admin gesendet.",
+  "ownerChangeInfo": "Deine Änderungsanfrage wurde an den Admin gesendet und wird geprüft.",
+  "editProject": "Bearbeiten",
+  "editPendingInfo": "Deine Änderungen werden als Anfrage an den Admin gesendet und erst nach Bestätigung übernommen.",
+  "editSendRequest": "Änderung beantragen",
+  "editError": "Fehler beim Senden der Anfrage",
   "requestPending": "Anfrage läuft",
   "requestAccepted": "Anfrage akzeptiert",
   "requestRejected": "Anfrage abgelehnt",
@@ -192,6 +196,19 @@
     "required": "Pflicht",
     "total": "Gesamt",
     "milestones": "Meilensteine",
-    "updates": "Projekt-Updates"
+    "updates": "Projekt-Updates",
+    "projectDetails": "Weitere Informationen",
+    "createdAt": "Erstellt am",
+    "startDate": "Startdatum",
+    "address": "Adresse",
+    "video": "Video",
+    "participants": "Teilnehmer",
+    "noParticipants": "Noch keine Teilnehmer",
+    "participantName": "Name",
+    "participantCountry": "Land",
+    "participantAmount": "Betrag",
+    "participantDate": "Datum",
+    "participantStatus": "Status",
+    "removeParticipant": "Entfernen"
   }
 }

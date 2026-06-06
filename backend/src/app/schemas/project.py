@@ -40,7 +40,7 @@ class ProjectCreate(BaseModel):
     expected_monthly_profit: Decimal | None = None
     expected_duration_months: int | None = None
     start_date: date | None = None
-    visibility: ProjectVisibility = ProjectVisibility.PRIVATE
+    visibility: ProjectVisibility = ProjectVisibility.PUBLIC
 
     @field_validator("title")
     @classmethod
@@ -152,6 +152,21 @@ class ProjectRead(BaseModel):
     main_image_url: str | None
     video_url: str | None
     funding_progress: float = 0.0
+    created_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+
+class ParticipantResponse(BaseModel):
+    interest_id: int
+    user_id: int
+    full_name: Optional[str]
+    email: str
+    phone: Optional[str]
+    country: Optional[str]
+    amount: Optional[Decimal]
+    status: str
+    joined_at: Optional[datetime]
 
     model_config = {"from_attributes": True}
 

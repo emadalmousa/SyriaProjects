@@ -81,6 +81,7 @@ class InterestStatus(str, enum.Enum):
     ACCEPTED = "ACCEPTED"
     REJECTED = "REJECTED"
     WITHDRAWN = "WITHDRAWN"
+    BLOCKED = "BLOCKED"
 
 
 class MilestoneStatus(str, enum.Enum):
@@ -129,7 +130,7 @@ class Project(Base):
     expected_duration_months = Column(Integer)
 
     status = Column(Enum(ProjectStatus), default=ProjectStatus.IDEA, nullable=False)
-    visibility = Column(Enum(ProjectVisibility), default=ProjectVisibility.PRIVATE, nullable=False)
+    visibility = Column(Enum(ProjectVisibility), default=ProjectVisibility.PUBLIC, nullable=False)
     verification_status = Column(Enum(VerificationStatus), default=VerificationStatus.NOT_CHECKED, nullable=False)
     risk_level = Column(Enum(RiskLevel), default=RiskLevel.UNKNOWN, nullable=False)
 
