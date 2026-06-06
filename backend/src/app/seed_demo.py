@@ -85,16 +85,20 @@ def seed():
         #  USERS                                                               #
         # ------------------------------------------------------------------ #
 
-        u1 = User(
-            email="user@gmail.com",
-            hashed_password=hash_password("123456789"),
-            first_name="Ahmad",
-            last_name="Al-Halabi",
-            phone="+963 21 345 6789",
-            country="Syria",
-            user_type=UserType.PROJECT_SUBMITTER,
-            email_verified=True,
-        )
+        u1 = db.query(User).filter(User.email == "user@gmail.com").first()
+        if not u1:
+            u1 = User(
+                email="user@gmail.com",
+                hashed_password=hash_password("123456789"),
+                first_name="Ahmad",
+                last_name="Al-Halabi",
+                phone="+963 21 345 6789",
+                country="Syria",
+                user_type=UserType.PROJECT_SUBMITTER,
+                email_verified=True,
+            )
+            db.add(u1)
+            db.flush()
         u2 = User(
             email="fatima.dimashqi@syriaprojects.sy",
             hashed_password=hash_password("123456789"),
@@ -176,8 +180,8 @@ def seed():
             email_verified=True,
         )
 
-        users = [u1, u2, u3, u4, u5, u6, u7, u8, u9]
-        for u in users:
+        new_users = [u2, u3, u4, u5, u6, u7, u8, u9]
+        for u in new_users:
             db.add(u)
         db.flush()
 
