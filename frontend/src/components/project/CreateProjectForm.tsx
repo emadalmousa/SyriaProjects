@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
-import { Alert, Button } from "@/components/ui";
+import { Alert, Button, Tooltip } from "@/components/ui";
 import { InputField, SelectField, TextareaField } from "@/components/ui";
 
 const SYRIAN_GOV_EN = [
@@ -30,6 +30,7 @@ export function CreateProjectForm() {
   const router = useRouter();
   const t = useTranslations("project.createForm");
   const tCat = useTranslations("project.categoryFull");
+  const tt = useTranslations("common.tooltip");
   const locale = useLocale();
   const governorates = locale === "ar" ? SYRIAN_GOV_AR : SYRIAN_GOV_EN;
   const [error, setError]   = useState("");
@@ -151,7 +152,9 @@ export function CreateProjectForm() {
                     <input type="checkbox" checked={item.is_required} onChange={(e) => { const n = [...budgetItems]; n[i].is_required = e.target.checked; setBudgetItems(n); }} className="accent-brand" />
                     {t("budgetItemRequired")}
                   </label>
-                  <button type="button" onClick={() => setBudgetItems(budgetItems.filter((_, j) => j !== i))} className={removeBtnCls} aria-label={t("removeItem")}>{"✕"}</button>
+                  <Tooltip text={tt("removeItem")} side="top">
+                    <button type="button" onClick={() => setBudgetItems(budgetItems.filter((_, j) => j !== i))} className={removeBtnCls} aria-label={t("removeItem")}>{"✕"}</button>
+                  </Tooltip>
                 </div>
               </div>
             ))}
@@ -167,7 +170,9 @@ export function CreateProjectForm() {
                 <InputField label={i === 0 ? t("milestoneTitle") : ""} type="text" value={ms.title} onChange={(e) => { const n = [...milestones]; n[i].title = e.target.value; setMilestones(n); }} placeholder={t("milestonePlaceholder")} />
                 <div className="flex gap-2 items-end">
                   <InputField label={i === 0 ? t("milestoneDescription") : ""} wrapClass="flex-1" type="text" value={ms.description} onChange={(e) => { const n = [...milestones]; n[i].description = e.target.value; setMilestones(n); }} placeholder={t("milestoneDescriptionPlaceholder")} />
-                  <button type="button" onClick={() => setMilestones(milestones.filter((_, j) => j !== i))} className={`${removeBtnCls} mb-0.5`} aria-label={t("removeItem")}>{"✕"}</button>
+                  <Tooltip text={tt("removeItem")} side="top">
+                    <button type="button" onClick={() => setMilestones(milestones.filter((_, j) => j !== i))} className={`${removeBtnCls} mb-0.5`} aria-label={t("removeItem")}>{"✕"}</button>
+                  </Tooltip>
                 </div>
               </div>
             ))}

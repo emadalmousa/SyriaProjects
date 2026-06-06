@@ -1,4 +1,4 @@
-export type GlobalRole = "ADMIN" | "USER";
+export type GlobalRole = "SUPERADMIN" | "ADMIN" | "USER";
 
 export type ProjectRole =
   | "PROJECT_OWNER"
@@ -60,6 +60,8 @@ export interface ProjectListItem {
   visibility: ProjectVisibility;
   main_image_url: string | null;
   funding_progress: number;
+  participant_count: number;
+  total_invested: number;
 }
 
 export interface Participant {

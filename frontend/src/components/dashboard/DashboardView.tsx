@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { User, Project } from "@/types";
@@ -14,29 +15,78 @@ import {
 } from "@/components/project";
 import type { ProjectFiltersState } from "@/components/project";
 
+type SortKey = "newest" | "oldest" | "alpha" | "participants" | "invested" | "funding";
+
+function parseSet(param: string | null): Set<string> {
+  if (!param) return new Set();
+  return new Set(param.split(",").filter(Boolean));
+}
+
+function parseNumSet(param: string | null): Set<number> {
+  if (!param) return new Set();
+  return new Set(param.split(",").filter(Boolean).map(Number));
+}
+
+function encodeSet(s: Set<string | number>): string {
+  return Array.from(s).join(",");
+}
+
+function filtersFromParams(params: URLSearchParams): ProjectFiltersState {
+  return {
+    categories:    parseSet(params.get("cat")),
+    statuses:      parseSet(params.get("st")),
+    countries:     parseSet(params.get("co")),
+    cities:        parseSet(params.get("ci")),
+    districts:     parseSet(params.get("di")),
+    capitalBuckets: parseNumSet(params.get("cap")),
+  };
+}
+
 export function DashboardView() {
-  const router = useRouter();
-  const t = useTranslations("dashboard");
-  const tProject = useTranslations("project");
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const t            = useTranslations("dashboard");
+  const tProject     = useTranslations("project");
+
   const [user, setUser]       = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading]   = useState(true);
-  const [filters, setFilters]   = useState<ProjectFiltersState>(emptyFilters());
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [search, setSearch]           = useState("");
   const [statusUpdating, setStatusUpdating] = useState<number | null>(null);
+
+  // Initialise from URL on first render
+  const [search,  setSearch]  = useState(() => searchParams.get("q") ?? "");
+  const [sortKey, setSortKey] = useState<SortKey>(() => (searchParams.get("sort") as SortKey) ?? "newest");
+  const [filters, setFilters] = useState<ProjectFiltersState>(() => filtersFromParams(searchParams));
+
+  // Sync state → URL (replace so it doesn't pollute history)
+  const initialized = useRef(false);
+  useEffect(() => {
+    if (!initialized.current) { initialized.current = true; return; }
+    const p = new URLSearchParams();
+    if (search)                         p.set("q",    search);
+    if (sortKey !== "newest")           p.set("sort", sortKey);
+    if (filters.categories.size)        p.set("cat",  encodeSet(filters.categories));
+    if (filters.statuses.size)          p.set("st",   encodeSet(filters.statuses));
+    if (filters.countries.size)         p.set("co",   encodeSet(filters.countries));
+    if (filters.cities.size)            p.set("ci",   encodeSet(filters.cities));
+    if (filters.districts.size)         p.set("di",   encodeSet(filters.districts));
+    if (filters.capitalBuckets.size)    p.set("cap",  encodeSet(filters.capitalBuckets));
+    const qs = p.toString();
+    router.replace((`/dashboard${qs ? `?${qs}` : ""}`) as Parameters<typeof router.replace>[0], { scroll: false });
+  }, [search, sortKey, filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     api.users.me()
       .then((u) => { setUser(u as User); return api.projects.list(); })
-      .then((p) => setProjects((p as Project[]).sort((a, b) => b.id - a.id)))
+      .then((p) => setProjects(p as Project[]))
       .catch(() => router.push("/login"))
       .finally(() => setLoading(false));
   }, [router]);
 
   // ── Visibility filter ────────────────────────────────────────────────────
 
-  const isAdmin         = user?.global_role === "ADMIN";
+  const isAdmin         = user?.global_role === "ADMIN" || user?.global_role === "SUPERADMIN";
   const visibleProjects = isAdmin
     ? projects
     : projects.filter((p) => p.status !== "IDEA");
@@ -49,11 +99,11 @@ export function DashboardView() {
   const availableCities     = useMemo(() => { const s = new Set<string>(); visibleProjects.forEach((p) => { if (p.city)     s.add(p.city);     }); return Array.from(s).sort(); }, [visibleProjects]);
   const availableDistricts  = useMemo(() => { const s = new Set<string>(); visibleProjects.forEach((p) => { if (p.district) s.add(p.district); }); return Array.from(s).sort(); }, [visibleProjects]);
 
-  // ── Filtered results ─────────────────────────────────────────────────────
+  // ── Filtered + sorted results ────────────────────────────────────────────
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return visibleProjects.filter((p) => {
+    const list = visibleProjects.filter((p) => {
       if (filters.categories.size > 0 && !filters.categories.has(p.category)) return false;
       if (filters.statuses.size > 0   && !filters.statuses.has(p.status))     return false;
       if (filters.countries.size > 0  && (!p.country  || !filters.countries.has(p.country)))   return false;
@@ -75,7 +125,16 @@ export function DashboardView() {
       }
       return true;
     });
-  }, [visibleProjects, filters, search]);
+    return [...list].sort((a, b) => {
+      if (sortKey === "newest")       return b.id - a.id;
+      if (sortKey === "oldest")       return a.id - b.id;
+      if (sortKey === "alpha")        return a.title.localeCompare(b.title);
+      if (sortKey === "participants") return (b.participant_count ?? 0) - (a.participant_count ?? 0);
+      if (sortKey === "invested")     return (b.total_invested ?? 0) - (a.total_invested ?? 0);
+      if (sortKey === "funding")      return b.funding_progress - a.funding_progress;
+      return 0;
+    });
+  }, [visibleProjects, filters, search, sortKey]);
 
   // ── Filter chips ─────────────────────────────────────────────────────────
 
@@ -108,11 +167,13 @@ export function DashboardView() {
   return (
     <div className="min-h-screen bg-[var(--clr-bg)]">
 
-      {/* Sticky search */}
+      {/* Sticky search + sort */}
       <SearchBar
         value={search}
         onChange={setSearch}
         placeholder={t("searchPlaceholder")}
+        sortKey={sortKey}
+        onSortChange={setSortKey}
       />
 
       <div className="mx-auto max-w-screen-2xl px-5 py-8 sm:px-8">

@@ -122,7 +122,8 @@
   },
   "card": {
     "edit": "تعديل",
-    "funded": "{percent}% ممول"
+    "funded": "{percent}% ممول",
+    "participants": "{count} مشارك"
   },
   "createForm": {
     "pageTitle": "إنشاء مشروع جديد",
@@ -204,6 +205,8 @@
     "video": "فيديو",
     "participants": "المشاركون",
     "noParticipants": "لا يوجد مشاركون بعد",
+    "statusAccepted": "مقبول",
+    "statusPending": "قيد الانتظار",
     "participantName": "الاسم",
     "participantCountry": "البلد",
     "participantAmount": "المبلغ",

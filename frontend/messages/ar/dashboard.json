@@ -11,5 +11,14 @@
   "projectCount": "{count} مشروع",
   "projectCountPlural": "{count} مشاريع",
   "clearAll": "مسح الكل",
-  "removeFilter": "إزالة الفلتر"
+  "removeFilter": "إزالة الفلتر",
+  "sortLabel": "ترتيب",
+  "sortNewest": "الأحدث",
+  "sortOldest": "الأقدم",
+  "sortAlpha": "أ – ي",
+  "sortParticipants": "الأكثر مشاركين",
+  "sortInvested": "الأعلى استثماراً",
+  "sortFunding": "نسبة التمويل",
+  "participants": "مشارك",
+  "invested": "مستثمر"
 }

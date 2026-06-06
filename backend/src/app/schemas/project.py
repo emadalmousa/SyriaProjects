@@ -189,6 +189,8 @@ class ProjectListItem(BaseModel):
     visibility: ProjectVisibility
     main_image_url: str | None
     funding_progress: float = 0.0
+    participant_count: int = 0
+    total_invested: float = 0.0
 
     model_config = {"from_attributes": True}
 

@@ -6,7 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { formatMoney, formatPercent } from "@/lib/format";
 import type { Project, ProjectBudgetItem, ProjectMilestone, ProjectUpdate, User, Participant } from "@/types";
-import { PageSpinner, Card, Alert } from "@/components/ui";
+import { PageSpinner, Card, Alert, Tooltip } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
 import { StatusBadge, CategoryBadge, FundingBar, ALL_CATEGORIES } from "@/components/project";
 import { InputField, SelectField, TextareaField } from "@/components/ui";
@@ -65,6 +65,7 @@ export function ProjectDetailView() {
   const router = useRouter();
   const t = useTranslations("project");
   const tCat = useTranslations("project.categoryFull");
+  const tt = useTranslations("common.tooltip");
   const locale = useLocale();
   const governorates = locale === "ar" ? SYRIAN_GOV_AR : SYRIAN_GOV_EN;
   const id = Number(params.id);
@@ -106,12 +107,9 @@ export function ProjectDetailView() {
         setUpdates(upd as ProjectUpdate[]);
         const user = me as User;
         setCurrentUser(user);
-        const isOwner = proj.created_by_user_id === user.id || user.global_role === "ADMIN";
-        if (isOwner) {
-          api.projects.participants(id)
-            .then(data => setParticipants(data as Participant[]))
-            .catch(() => {});
-        }
+        api.projects.participants(id)
+          .then(data => setParticipants(data as Participant[]))
+          .catch(() => setParticipants([]));
       })
       .catch(() => router.push("/login"));
   }, [id, router]);
@@ -199,9 +197,8 @@ export function ProjectDetailView() {
 
         <div className="flex gap-6">
 
-          {/* Teilnehmer-Sidebar — nur für Owner/Admin */}
-          {isOwner && (
-            <aside className="hidden lg:block" style={{ width: "240px", flexShrink: 0 }}>
+          {/* Teilnehmer-Sidebar */}
+          <aside style={{ width: "240px", flexShrink: 0 }}>
               <div className="sticky top-4 rounded-card border border-line bg-surface px-4 py-4" style={{ boxShadow: "var(--sh-sm)", width: "380px", marginLeft: "-140px" }}>
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-sm font-bold text-[var(--clr-text)]">{t("detail.participants")}</h2>
@@ -211,45 +208,100 @@ export function ProjectDetailView() {
                 </div>
                 {participants.length === 0 ? (
                   <p className="px-2 text-xs text-[var(--clr-text-3)]">{t("detail.noParticipants")}</p>
-                ) : (
-                  <ul className="space-y-1">
-                    {participants.map((p) => (
-                      <li key={p.interest_id} className={`rounded-lg px-2 py-2 text-sm ${
-                        p.status === "ACCEPTED"
-                          ? "bg-brand/10 dark:bg-brand/20"
-                          : "hover:bg-surface-2"
-                      }`}>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <p className={`truncate text-sm font-medium ${p.status === "ACCEPTED" ? "text-brand" : "text-[var(--clr-text)]"}`}>
-                              {p.full_name || p.email}
-                            </p>
-                            <p className="truncate text-xs text-[var(--clr-text-3)]">
-                              {[p.country, p.joined_at ? new Date(p.joined_at).toLocaleDateString(locale === "ar" ? "ar-SY" : locale === "de" ? "de-DE" : "en-GB") : null].filter(Boolean).join(" · ")}
-                            </p>
-                            <p className={`text-xs font-semibold ${p.status === "ACCEPTED" ? "text-brand" : "text-[var(--clr-text-2)]"}`}>
-                              {p.amount ? formatMoney(p.amount, project.currency) : "—"}
-                            </p>
+                ) : (() => {
+                  const accepted = participants.filter(p => p.status === "ACCEPTED");
+                  const pending  = participants.filter(p => p.status !== "ACCEPTED");
+                  return (
+                    <div className="flex flex-col gap-3">
+                      {accepted.length > 0 && (
+                        <div>
+                          <div className="mb-1.5 flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                            <span className="text-[11px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+                              {t("detail.statusAccepted")} · {accepted.length}
+                            </span>
                           </div>
+                          <ul className="flex flex-col gap-1">
+                            {accepted.map((p) => (
+                              <li key={p.interest_id} className="rounded-lg border border-emerald-200/60 bg-emerald-50 px-3 py-2 dark:border-emerald-800/30 dark:bg-emerald-900/20">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                                      {p.full_name || p.email}
+                                    </p>
+                                    {p.country && (
+                                      <p className="truncate text-xs text-emerald-600/70 dark:text-emerald-400/60">{p.country}</p>
+                                    )}
+                                    {p.amount && (
+                                      <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                                        {formatMoney(p.amount, project.currency)}
+                                      </p>
+                                    )}
+                                  </div>
+                                  {isOwner && (
+                                    <Tooltip text={tt("removeParticipant")} side="right">
+                                      <button
+                                        onClick={async () => {
+                                          await api.projects.removeParticipant(id, p.interest_id);
+                                          setParticipants(prev => prev.filter(x => x.interest_id !== p.interest_id));
+                                        }}
+                                        className="shrink-0 text-xs text-red-400 hover:text-red-600 hover:underline"
+                                      >
+                                        {t("detail.removeParticipant")}
+                                      </button>
+                                    </Tooltip>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                        <div className="mt-1.5">
-                          <button
-                            onClick={async () => {
-                              await api.projects.removeParticipant(id, p.interest_id);
-                              setParticipants(prev => prev.filter(x => x.interest_id !== p.interest_id));
-                            }}
-                            className="text-xs text-red-500 hover:underline"
-                          >
-                            {t("detail.removeParticipant")}
-                          </button>
+                      )}
+
+                      {pending.length > 0 && (
+                        <div>
+                          <div className="mb-1.5 flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-amber-400" />
+                            <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                              {t("detail.statusPending")} · {pending.length}
+                            </span>
+                          </div>
+                          <ul className="flex flex-col gap-1">
+                            {pending.map((p) => (
+                              <li key={p.interest_id} className="rounded-lg border border-amber-200/60 bg-amber-50 px-3 py-2 dark:border-amber-800/30 dark:bg-amber-900/20">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-semibold text-amber-800 dark:text-amber-300">
+                                      {p.full_name || p.email}
+                                    </p>
+                                    {p.country && (
+                                      <p className="truncate text-xs text-amber-600/70 dark:text-amber-400/60">{p.country}</p>
+                                    )}
+                                  </div>
+                                  {isOwner && (
+                                    <Tooltip text={tt("removeParticipant")} side="right">
+                                      <button
+                                        onClick={async () => {
+                                          await api.projects.removeParticipant(id, p.interest_id);
+                                          setParticipants(prev => prev.filter(x => x.interest_id !== p.interest_id));
+                                        }}
+                                        className="shrink-0 text-xs text-red-400 hover:text-red-600 hover:underline"
+                                      >
+                                        {t("detail.removeParticipant")}
+                                      </button>
+                                    </Tooltip>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </aside>
-          )}
 
           {/* Main Content */}
           <div className="min-w-0 flex-1">
@@ -301,12 +353,14 @@ export function ProjectDetailView() {
                         >
                           {joining ? t("joining") : t("join")}
                         </button>
-                        <button
-                          onClick={() => setShowJoinForm(false)}
-                          className="rounded-lg border border-[var(--clr-line)] px-3 py-2 text-sm text-[var(--clr-text-2)] hover:bg-[var(--clr-surface-2)]"
-                        >
-                          {"✕"}
-                        </button>
+                        <Tooltip text={tt("cancelJoin")} side="top">
+                          <button
+                            onClick={() => setShowJoinForm(false)}
+                            className="rounded-lg border border-[var(--clr-line)] px-3 py-2 text-sm text-[var(--clr-text-2)] hover:bg-[var(--clr-surface-2)]"
+                          >
+                            {"✕"}
+                          </button>
+                        </Tooltip>
                       </div>
                       {joinAmountError && (
                         <p className="text-xs text-red-500">{joinAmountError}</p>
@@ -326,12 +380,14 @@ export function ProjectDetailView() {
 
             {/* Bearbeiten-Button für Ersteller */}
             {isOwner && (
-              <button
-                onClick={openEdit}
-                className="shrink-0 rounded-lg border border-[var(--clr-brand)] px-4 py-2 text-sm font-semibold text-[var(--clr-brand)] transition hover:bg-[var(--clr-brand)] hover:text-white"
-              >
-                {t("editProject")}
-              </button>
+              <Tooltip text={tt("editProject")} side="bottom">
+                <button
+                  onClick={openEdit}
+                  className="shrink-0 rounded-lg border border-[var(--clr-brand)] px-4 py-2 text-sm font-semibold text-[var(--clr-brand)] transition hover:bg-[var(--clr-brand)] hover:text-white"
+                >
+                  {t("editProject")}
+                </button>
+              </Tooltip>
             )}
           </div>
         </Card>
@@ -342,7 +398,9 @@ export function ProjectDetailView() {
             <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl dark:bg-[var(--clr-surface)]">
               <div className="mb-5 flex items-center justify-between">
                 <h2 className="font-display text-lg font-bold text-[var(--clr-text)]">{t("editProject")}</h2>
-                <button onClick={() => setShowEdit(false)} className="text-[var(--clr-text-3)] hover:text-[var(--clr-text)]">{"✕"}</button>
+                <Tooltip text={tt("closeModal")} side="left">
+                  <button onClick={() => setShowEdit(false)} className="text-[var(--clr-text-3)] hover:text-[var(--clr-text)]">{"✕"}</button>
+                </Tooltip>
               </div>
 
               {editError && <Alert type="error" className="mb-4">{editError}</Alert>}

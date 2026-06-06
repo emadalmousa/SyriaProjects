@@ -11,5 +11,14 @@
   "projectCount": "{count} Projekt",
   "projectCountPlural": "{count} Projekte",
   "clearAll": "Alle löschen",
-  "removeFilter": "Filter entfernen"
+  "removeFilter": "Filter entfernen",
+  "sortLabel": "Sortieren",
+  "sortNewest": "Neueste",
+  "sortOldest": "Älteste",
+  "sortAlpha": "A – Z",
+  "sortParticipants": "Meiste Teilnehmer",
+  "sortInvested": "Höchste Investition",
+  "sortFunding": "Finanzierungsstand",
+  "participants": "Teilnehmer",
+  "invested": "investiert"
 }

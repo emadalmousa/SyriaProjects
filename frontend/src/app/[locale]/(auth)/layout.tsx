@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { Tooltip } from "@/components/ui";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const [dark, setDark] = useState(false);
+  const tt = useTranslations("common.tooltip");
 
   useEffect(() => {
     const stored = localStorage.getItem("theme");
@@ -39,20 +42,22 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
-            <button
-              onClick={toggleDark}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface-2 text-[var(--clr-text-2)] transition hover:border-brand/30 hover:text-brand dark:bg-surface dark:border-line"
-            >
-              {dark ? (
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m8.66-9H21M3 12H2.34M18.36 5.64l-.71.71M6.34 17.66l-.71.71M18.36 18.36l-.71-.71M6.34 6.34l-.71-.71M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" />
-                </svg>
-              ) : (
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
-                </svg>
-              )}
-            </button>
+            <Tooltip text={tt("toggleDark")} side="bottom">
+              <button
+                onClick={toggleDark}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface-2 text-[var(--clr-text-2)] transition hover:border-brand/30 hover:text-brand dark:bg-surface dark:border-line"
+              >
+                {dark ? (
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m8.66-9H21M3 12H2.34M18.36 5.64l-.71.71M6.34 17.66l-.71.71M18.36 18.36l-.71-.71M6.34 6.34l-.71-.71M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" />
+                  </svg>
+                ) : (
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
+                  </svg>
+                )}
+              </button>
+            </Tooltip>
           </div>
         </div>
       </header>

@@ -122,7 +122,8 @@
   },
   "card": {
     "edit": "Edit",
-    "funded": "{percent}% funded"
+    "funded": "{percent}% funded",
+    "participants": "{count} participants"
   },
   "createForm": {
     "pageTitle": "Create New Project",
@@ -204,6 +205,8 @@
     "video": "Video",
     "participants": "Participants",
     "noParticipants": "No participants yet",
+    "statusAccepted": "Confirmed",
+    "statusPending": "Pending",
     "participantName": "Name",
     "participantCountry": "Country",
     "participantAmount": "Amount",

@@ -28,6 +28,26 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 
 ADMIN_ONLY_STATUSES = {ProjectStatus.IDEA}
 JOIN_ALLOWED_STATUSES = {ProjectStatus.ACTIVE}
+
+
+def enrich_project_item(p: Project, db) -> dict:
+    item = {
+        "id": p.id, "title": p.title, "short_description": p.short_description,
+        "category": p.category, "city": p.city, "country": p.country,
+        "needed_capital": p.needed_capital or 0, "currency": p.currency,
+        "status": p.status, "visibility": p.visibility,
+        "main_image_url": p.main_image_url,
+        "funding_progress": calculate_funding_progress(
+            p.total_budget or Decimal("0"), p.own_capital or Decimal("0")
+        ),
+    }
+    accepted = db.query(ProjectInterest).filter(
+        ProjectInterest.project_id == p.id,
+        ProjectInterest.status == InterestStatus.ACCEPTED,
+    ).all()
+    item["participant_count"] = len(accepted)
+    item["total_invested"] = float(sum(i.amount or 0 for i in accepted))
+    return item
 READ_ONLY_STATUSES = {
     ProjectStatus.APPROVED, ProjectStatus.CONTRACT, ProjectStatus.FUNDED,
     ProjectStatus.COMPLETED, ProjectStatus.CANCELLED,
@@ -46,14 +66,7 @@ def list_public_projects(db: Session = Depends(get_db)):
         )
         .all()
     )
-    result = []
-    for p in projects:
-        item = ProjectListItem.model_validate(p).model_dump()
-        item["funding_progress"] = calculate_funding_progress(
-            p.total_budget or Decimal("0"), p.own_capital or Decimal("0")
-        )
-        result.append(item)
-    return result
+    return [enrich_project_item(p, db) for p in projects]
 
 
 @router.get("/", response_model=list[ProjectListItem])
@@ -69,27 +82,13 @@ def list_projects(db: Session = Depends(get_db), current_user: User = Depends(ge
             )
             .all()
         )
-    result = []
-    for p in projects:
-        item = ProjectListItem.model_validate(p).model_dump()
-        item["funding_progress"] = calculate_funding_progress(
-            p.total_budget or Decimal("0"), p.own_capital or Decimal("0")
-        )
-        result.append(item)
-    return result
+    return [enrich_project_item(p, db) for p in projects]
 
 
 @router.get("/my", response_model=list[ProjectListItem])
 def my_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     projects = db.query(Project).filter(Project.created_by_user_id == current_user.id).all()
-    result = []
-    for p in projects:
-        item = ProjectListItem.model_validate(p).model_dump()
-        item["funding_progress"] = calculate_funding_progress(
-            p.total_budget or Decimal("0"), p.own_capital or Decimal("0")
-        )
-        result.append(item)
-    return result
+    return [enrich_project_item(p, db) for p in projects]
 
 
 @router.get("/my-participations", response_model=list[ProjectListItem])
@@ -100,14 +99,7 @@ def my_participations(db: Session = Depends(get_db), current_user: User = Depend
         Project.id.in_(project_ids),
         Project.created_by_user_id != current_user.id,
     ).all()
-    result = []
-    for p in projects:
-        item = ProjectListItem.model_validate(p).model_dump()
-        item["funding_progress"] = calculate_funding_progress(
-            p.total_budget or Decimal("0"), p.own_capital or Decimal("0")
-        )
-        result.append(item)
-    return result
+    return [enrich_project_item(p, db) for p in projects]
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -372,16 +364,11 @@ def get_participants(
     project = db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
-    is_owner = project.created_by_user_id == current_user.id
-    if not is_owner and not is_admin(current_user):
-        require_project_roles(
-            current_user, db, project_id,
-            [ProjectRole.PROJECT_OWNER, ProjectRole.PROJECT_ADMIN, ProjectRole.PROJECT_MANAGER],
-        )
     interests = db.query(ProjectInterest).filter(
         ProjectInterest.project_id == project_id,
         ProjectInterest.status.in_([InterestStatus.PENDING, InterestStatus.ACCEPTED]),
     ).all()
+    show_private = project.created_by_user_id == current_user.id or is_admin(current_user)
     result = []
     for interest in interests:
         user = db.get(User, interest.user_id)
@@ -391,8 +378,8 @@ def get_participants(
             interest_id=interest.id,
             user_id=user.id,
             full_name=user.full_name,
-            email=user.email,
-            phone=user.phone,
+            email=user.email if show_private else None,
+            phone=user.phone if show_private else None,
             country=user.country,
             amount=interest.amount,
             status=interest.status.value,

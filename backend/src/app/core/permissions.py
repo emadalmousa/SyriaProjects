@@ -4,8 +4,15 @@ from app.models.project import ProjectMember, ProjectRole
 from app.models.user import GlobalRole, User
 
 
+SUPERADMIN_EMAIL = "almousa.emad.92@gmail.com"
+
+
+def is_superadmin(user: User) -> bool:
+    return user.global_role == GlobalRole.SUPERADMIN
+
+
 def is_admin(user: User) -> bool:
-    return user.global_role == GlobalRole.ADMIN
+    return user.global_role in (GlobalRole.ADMIN, GlobalRole.SUPERADMIN)
 
 
 def get_project_role(db: Session, user_id: int, project_id: int) -> ProjectRole | None:

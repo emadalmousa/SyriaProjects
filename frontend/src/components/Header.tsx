@@ -6,6 +6,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { User } from "@/types";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { Tooltip } from "@/components/ui";
 
 const AVATAR_COLORS = [
   "bg-emerald-600","bg-violet-600","bg-amber-600","bg-rose-600","bg-sky-600","bg-teal-600",
@@ -14,6 +15,7 @@ const AVATAR_COLORS = [
 export default function Header() {
   const router = useRouter();
   const t = useTranslations("common");
+  const tt = useTranslations("common.tooltip");
   const [user, setUser] = useState<User | null>(null);
   const [dark, setDark] = useState(false);
 
@@ -91,31 +93,35 @@ export default function Header() {
               </Link>
 
               {/* Logout */}
-              <button
-                onClick={logout}
-                className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[var(--clr-danger-dim)] bg-[var(--clr-danger-dim)] px-3.5 py-1.5 text-xs font-semibold text-[var(--clr-danger)] transition hover:bg-red-100 dark:border-red-800/50 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
-              >
-                {t("nav.logout")}
-              </button>
+              <Tooltip text={tt("logout")} side="bottom">
+                <button
+                  onClick={logout}
+                  className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[var(--clr-danger-dim)] bg-[var(--clr-danger-dim)] px-3.5 py-1.5 text-xs font-semibold text-[var(--clr-danger)] transition hover:bg-red-100 dark:border-red-800/50 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+                >
+                  {t("nav.logout")}
+                </button>
+              </Tooltip>
             </>
           )}
 
           {/* Dark-mode toggle */}
-          <button
-            onClick={toggleDark}
-            aria-label={t("nav.toggleDark")}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface-2 text-[var(--clr-text-2)] transition hover:border-brand/30 hover:text-brand dark:bg-surface dark:border-line"
-          >
-            {dark ? (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m8.66-9H21M3 12H2.34M18.36 5.64l-.71.71M6.34 17.66l-.71.71M18.36 18.36l-.71-.71M6.34 6.34l-.71-.71M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" />
-              </svg>
-            ) : (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
-              </svg>
-            )}
-          </button>
+          <Tooltip text={tt("toggleDark")} side="bottom">
+            <button
+              onClick={toggleDark}
+              aria-label={t("nav.toggleDark")}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface-2 text-[var(--clr-text-2)] transition hover:border-brand/30 hover:text-brand dark:bg-surface dark:border-line"
+            >
+              {dark ? (
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m8.66-9H21M3 12H2.34M18.36 5.64l-.71.71M6.34 17.66l-.71.71M18.36 18.36l-.71-.71M6.34 6.34l-.71-.71M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" />
+                </svg>
+              ) : (
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
+                </svg>
+              )}
+            </button>
+          </Tooltip>
         </div>
       </div>
     </header>

@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import type { User } from "@/types";
-import { Avatar } from "@/components/ui";
+import { Avatar, Tooltip } from "@/components/ui";
 
 type SortKey = "name" | "email" | "role" | "type" | "created";
 type SortDir = "asc" | "desc";
@@ -31,6 +31,7 @@ export function UserTable({
   onConfirmBlock,
 }: UserTableProps) {
   const t = useTranslations("management");
+  const tt = useTranslations("common.tooltip");
   const [sortKey, setSortKey]   = useState<SortKey>("created");
   const [sortDir, setSortDir]   = useState<SortDir>("desc");
 
@@ -112,9 +113,15 @@ export function UserTable({
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    {isMe ? (
-                      <span className="rounded-pill bg-[var(--clr-danger-dim)] px-2.5 py-1 text-xs font-semibold text-[var(--clr-danger)]">{"\u{1F6E1}\u{FE0F}"} {t("roleAdminYou")}</span>
-                    ) : (
+                    {isMe || u.global_role === "SUPERADMIN" ? (
+                      <span className={`rounded-pill px-2.5 py-1 text-xs font-semibold ${
+                        u.global_role === "SUPERADMIN"
+                          ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                          : "bg-[var(--clr-danger-dim)] text-[var(--clr-danger)]"
+                      }`}>
+                        {u.global_role === "SUPERADMIN" ? "\u{2B50} Superadmin" : `\u{1F6E1}\u{FE0F} ${t("roleAdminYou")}`}
+                      </span>
+                    ) : me.global_role === "SUPERADMIN" ? (
                       <select
                         value={u.global_role} disabled={isLoading}
                         onChange={(e) => onRoleChange(u.id, e.target.value)}
@@ -127,6 +134,14 @@ export function UserTable({
                         <option value="USER">{"\u{1F464}"} {t("roleUser")}</option>
                         <option value="ADMIN">{"\u{1F6E1}\u{FE0F}"} {t("roleAdmin")}</option>
                       </select>
+                    ) : (
+                      <span className={`rounded-pill px-2.5 py-1 text-xs font-semibold ${
+                        u.global_role === "ADMIN"
+                          ? "bg-[var(--clr-danger-dim)] text-[var(--clr-danger)]"
+                          : "bg-surface-2 text-[var(--clr-text-2)]"
+                      }`}>
+                        {u.global_role === "ADMIN" ? `\u{1F6E1}\u{FE0F} ${t("roleAdmin")}` : `\u{1F464} ${t("roleUser")}`}
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -139,21 +154,23 @@ export function UserTable({
                     {u.created_at ? new Date(u.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" }) : "\u{2014}"}
                   </td>
                   <td className="px-4 py-3">
-                    {!isMe && (
-                      <button
-                        disabled={isLoading}
-                        onClick={() => u.is_active ? onConfirmBlock(u) : onToggleActive(u)}
-                        className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition
-                          ${u.is_active
-                            ? "border-[var(--clr-danger-dim)] bg-[var(--clr-danger-dim)] text-[var(--clr-danger)] hover:bg-red-100 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400"
-                            : "border-[var(--clr-ok-dim)] bg-[var(--clr-ok-dim)] text-[var(--clr-ok)] hover:bg-emerald-100 dark:border-emerald-800/40 dark:bg-emerald-900/20 dark:text-emerald-400"
-                          } ${isLoading ? "cursor-not-allowed opacity-50" : ""}`}
-                      >
-                        {isLoading
-                          ? <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
-                          : u.is_active ? `\u{1F6AB} ${t("blockUser")}` : `\u{2705} ${t("unblockUser")}`
-                        }
-                      </button>
+                    {!isMe && u.global_role !== "SUPERADMIN" && (
+                      <Tooltip text={u.is_active ? tt("blockUser") : tt("unblockUser")} side="left">
+                        <button
+                          disabled={isLoading}
+                          onClick={() => u.is_active ? onConfirmBlock(u) : onToggleActive(u)}
+                          className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition
+                            ${u.is_active
+                              ? "border-[var(--clr-danger-dim)] bg-[var(--clr-danger-dim)] text-[var(--clr-danger)] hover:bg-red-100 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400"
+                              : "border-[var(--clr-ok-dim)] bg-[var(--clr-ok-dim)] text-[var(--clr-ok)] hover:bg-emerald-100 dark:border-emerald-800/40 dark:bg-emerald-900/20 dark:text-emerald-400"
+                            } ${isLoading ? "cursor-not-allowed opacity-50" : ""}`}
+                        >
+                          {isLoading
+                            ? <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                            : u.is_active ? `\u{1F6AB} ${t("blockUser")}` : `\u{2705} ${t("unblockUser")}`
+                          }
+                        </button>
+                      </Tooltip>
                     )}
                   </td>
                 </tr>

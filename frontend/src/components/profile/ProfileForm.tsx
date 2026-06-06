@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { User, Project, UserInterest, AdminRequest } from "@/types";
-import { Alert, Button, Avatar, PageSpinner } from "@/components/ui";
+import { Alert, Button, Avatar, PageSpinner, Tooltip } from "@/components/ui";
 import { InputField, SelectField } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
 import { Card } from "@/components/ui";
@@ -21,6 +21,7 @@ export function ProfileForm() {
   const router = useRouter();
   const t = useTranslations("profile");
   const tProject = useTranslations("project");
+  const tt = useTranslations("common.tooltip");
 
   const [user, setUser]       = useState<User | null>(null);
   const [form, setForm]       = useState({ first_name: "", last_name: "", phone: "", country: "" });
@@ -182,7 +183,7 @@ export function ProfileForm() {
           <div className="hidden lg:block w-px bg-line self-stretch" />
 
           {/* Right: Tabs — My Projects / My Participations */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4" style={{ minHeight: "560px" }}>
 
             {/* Tab bar */}
             <div className="flex gap-1 rounded-xl border border-line bg-surface p-1" style={{ boxShadow: "var(--sh-sm)" }}>
@@ -223,8 +224,7 @@ export function ProfileForm() {
             </div>
 
             {/* Tab: My Projects */}
-            {activeTab === "projects" && (
-              <div className="flex flex-col gap-3">
+            <div className={`flex flex-col gap-3 ${activeTab === "projects" ? "" : "hidden"}`} style={{ minHeight: "420px" }}>
                 <div className="flex items-center justify-end">
                   <Link href="/projects/create">
                     <Button size="sm">{t("newProject")}</Button>
@@ -264,34 +264,29 @@ export function ProfileForm() {
                     </Link>
                   ))
                 )}
-              </div>
-            )}
+            </div>
 
             {/* Tab: My Participations + My Requests */}
-            {activeTab === "participations" && (
-              <div className="flex flex-col gap-4">
+            <div className={`flex flex-col gap-3 ${activeTab === "participations" ? "" : "hidden"}`} style={{ minHeight: "420px" }}>
                 {participations.length === 0 ? (
                   <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-line bg-surface py-16" style={{ boxShadow: "var(--sh-sm)" }}>
                     <p className="text-sm text-[var(--clr-text-2)]">{tProject("noParticipations")}</p>
                   </div>
                 ) : (
-                  <ul className="space-y-3">
+                  <>
                     {participations.map((p) => (
-                      <li
+                      <div
                         key={p.id}
                         onClick={() => router.push(`/projects/${p.project_id}`)}
-                        className="group flex flex-col gap-2 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface)] p-3 transition-all hover:border-brand/40 hover:-translate-y-px cursor-pointer"
+                        className="group rounded-card border border-line bg-surface p-4 transition-all hover:border-brand/40 hover:-translate-y-px cursor-pointer"
                         style={{ boxShadow: "var(--sh-sm)" }}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-[var(--clr-text)] group-hover:text-brand transition-colors">{p.project_title}</p>
+                            <h3 className="truncate font-semibold text-[var(--clr-text)] group-hover:text-brand transition-colors">{p.project_title}</h3>
                             {p.amount && (
-                              <p className="text-xs text-[var(--clr-text-2)]">{p.amount.toLocaleString()} €</p>
+                              <p className="mt-1 text-xs text-[var(--clr-text-2)]">{p.amount.toLocaleString()} € · {new Date(p.created_at).toLocaleDateString()}</p>
                             )}
-                            <p className="text-xs text-[var(--clr-text-3)]">
-                              {new Date(p.created_at).toLocaleDateString()}
-                            </p>
                           </div>
                           <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
                             p.status === "ACCEPTED"
@@ -314,19 +309,23 @@ export function ProfileForm() {
                               <span className="text-xs text-[var(--clr-brand)]">{tProject("changeRequestInfo")}</span>
                             ) : (
                               <>
-                                <button
-                                  onClick={() => setChangingId(changingId === p.id ? null : p.id)}
-                                  className="text-xs text-[var(--clr-brand)] hover:underline"
-                                >
-                                  {tProject("editParticipation")}
-                                </button>
-                                <button
-                                  onClick={() => handleWithdraw(p.project_id)}
-                                  disabled={withdrawingId === p.project_id}
-                                  className="text-xs text-red-500 hover:underline disabled:opacity-50"
-                                >
-                                  {withdrawingId === p.project_id ? "..." : tProject("withdrawParticipation")}
-                                </button>
+                                <Tooltip text={tt("editParticipation")} side="top">
+                                  <button
+                                    onClick={() => setChangingId(changingId === p.id ? null : p.id)}
+                                    className="text-xs text-[var(--clr-brand)] hover:underline"
+                                  >
+                                    {tProject("editParticipation")}
+                                  </button>
+                                </Tooltip>
+                                <Tooltip text={tt("withdrawParticipation")} side="top">
+                                  <button
+                                    onClick={() => handleWithdraw(p.project_id)}
+                                    disabled={withdrawingId === p.project_id}
+                                    className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                                  >
+                                    {withdrawingId === p.project_id ? "..." : tProject("withdrawParticipation")}
+                                  </button>
+                                </Tooltip>
                               </>
                             )}
                             {changingId === p.id && (
@@ -339,19 +338,21 @@ export function ProfileForm() {
                                   placeholder={tProject("newAmount")}
                                   className="flex-1 rounded-lg border border-[var(--clr-line)] bg-[var(--clr-bg)] px-3 py-1.5 text-sm outline-none focus:border-[var(--clr-brand)]"
                                 />
-                                <button
-                                  onClick={() => handleChangeAmount(p.project_id)}
-                                  className="rounded-lg bg-[var(--clr-brand)] px-3 py-1.5 text-xs font-semibold text-white"
-                                >
-                                  ✓
-                                </button>
+                                <Tooltip text={tt("editParticipation")} side="top">
+                                  <button
+                                    onClick={() => handleChangeAmount(p.project_id)}
+                                    className="rounded-lg bg-[var(--clr-brand)] px-3 py-1.5 text-xs font-semibold text-white"
+                                  >
+                                    ✓
+                                  </button>
+                                </Tooltip>
                               </div>
                             )}
                           </div>
                         )}
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </>
                 )}
 
                 {requests.length > 0 && (
@@ -393,8 +394,7 @@ export function ProfileForm() {
                     </ul>
                   </div>
                 )}
-              </div>
-            )}
+            </div>
 
           </div>
 

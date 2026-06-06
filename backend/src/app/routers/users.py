@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.permissions import is_admin
+from app.core.permissions import is_admin, is_superadmin
 from app.core.security import decode_access_token
 from app.models.admin_request import AdminRequest
 from app.models.project import Project, ProjectInterest, InterestType
-from app.models.user import User
+from app.models.user import GlobalRole, User
 from app.schemas.user import UserProfileUpdate, UserResponse, UserRoleUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -54,11 +54,17 @@ def update_user_role(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if not is_admin(current_user):
-        raise HTTPException(status_code=403, detail="Only admins can change roles")
+    if not is_superadmin(current_user):
+        raise HTTPException(status_code=403, detail="Only superadmin can change roles")
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot change your own role")
+    if data.global_role == GlobalRole.SUPERADMIN:
+        raise HTTPException(status_code=400, detail="SUPERADMIN role cannot be assigned")
+    if user.global_role == GlobalRole.SUPERADMIN:
+        raise HTTPException(status_code=400, detail="Cannot change SUPERADMIN role")
     user.global_role = data.global_role
     db.commit()
     db.refresh(user)
@@ -69,7 +75,7 @@ def update_user_role(
 def list_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="Only admins can list users")
-    return db.query(User).all()
+    return db.query(User).filter(User.global_role != GlobalRole.SUPERADMIN).all()
 
 
 @router.get("/me/interests")
@@ -141,6 +147,8 @@ def set_user_active(
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if user.global_role == GlobalRole.SUPERADMIN:
+        raise HTTPException(status_code=403, detail="Cannot block superadmin")
     user.is_active = not user.is_active
     db.commit()
     db.refresh(user)

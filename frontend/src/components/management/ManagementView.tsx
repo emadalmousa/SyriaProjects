@@ -5,7 +5,7 @@ import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { User, AdminTasks, SystemNotification, AdminRequest, AdminHistory, HistoryProject, HistoryInterest, HistoryRequest } from "@/types";
 
-import { PageSpinner } from "@/components/ui";
+import { PageSpinner, Tooltip } from "@/components/ui";
 import { StatCard, ConfirmDialog, UserTable } from "@/components/management";
 
 export function ManagementView() {
@@ -13,6 +13,7 @@ export function ManagementView() {
   const t = useTranslations("management");
   const tCommon = useTranslations("common");
   const tProject = useTranslations("project");
+  const tt = useTranslations("common.tooltip");
 
   const [me, setMe]       = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -37,7 +38,7 @@ export function ManagementView() {
     api.users.me()
       .then((u) => {
         const me = u as User;
-        if (me.global_role !== "ADMIN") { router.push("/dashboard"); return; }
+        if (me.global_role !== "ADMIN" && me.global_role !== "SUPERADMIN") { router.push("/dashboard"); return; }
         setMe(me);
         return Promise.all([api.users.list(), api.admin.testDataStatus()]);
       })
@@ -226,8 +227,8 @@ export function ManagementView() {
                           <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(proj.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
-                              <button onClick={async () => { await api.admin.approveProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button>
-                              <button onClick={async () => { await api.admin.rejectProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button>
+                              <Tooltip text={tt("approveProject")} side="top"><button onClick={async () => { await api.admin.approveProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button></Tooltip>
+                              <Tooltip text={tt("rejectProject")} side="top"><button onClick={async () => { await api.admin.rejectProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button></Tooltip>
                             </div>
                           </td>
                         </tr>
@@ -249,8 +250,8 @@ export function ManagementView() {
                           <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(interest.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
-                              <button onClick={async () => { await api.admin.approveInterest(interest.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button>
-                              <button onClick={async () => { await api.admin.rejectInterest(interest.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button>
+                              <Tooltip text={tt("approveInterest")} side="top"><button onClick={async () => { await api.admin.approveInterest(interest.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button></Tooltip>
+                              <Tooltip text={tt("rejectInterest")} side="top"><button onClick={async () => { await api.admin.rejectInterest(interest.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button></Tooltip>
                             </div>
                           </td>
                         </tr>
@@ -277,8 +278,8 @@ export function ManagementView() {
                             <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(req.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
                             <td className="px-4 py-3">
                               <div className="flex gap-2">
-                                <button onClick={async () => { await api.admin.approveRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button>
-                                <button onClick={async () => { await api.admin.rejectRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button>
+                                <Tooltip text={tt("approveRequest")} side="top"><button onClick={async () => { await api.admin.approveRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button></Tooltip>
+                                <Tooltip text={tt("rejectRequest")} side="top"><button onClick={async () => { await api.admin.rejectRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button></Tooltip>
                               </div>
                             </td>
                           </tr>
@@ -338,7 +339,7 @@ export function ManagementView() {
                                 </td>
                                 <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(proj.decided_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
                                 <td className="px-4 py-3">
-                                  <button onClick={async () => { await api.admin.reopenProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button>
+                                  <Tooltip text={tt("reopenProject")} side="top"><button onClick={async () => { await api.admin.reopenProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button></Tooltip>
                                 </td>
                               </tr>
                             ))}
@@ -387,7 +388,7 @@ export function ManagementView() {
                                 </td>
                                 <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(item.decided_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
                                 <td className="px-4 py-3">
-                                  <button onClick={async () => { await api.admin.reopenInterest(item.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button>
+                                  <Tooltip text={tt("reopenInterest")} side="top"><button onClick={async () => { await api.admin.reopenInterest(item.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button></Tooltip>
                                 </td>
                               </tr>
                             ))}
@@ -436,7 +437,7 @@ export function ManagementView() {
                                 </td>
                                 <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(req.decided_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
                                 <td className="px-4 py-3">
-                                  <button onClick={async () => { await api.admin.reopenRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button>
+                                  <Tooltip text={tt("reopenRequest")} side="top"><button onClick={async () => { await api.admin.reopenRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button></Tooltip>
                                 </td>
                               </tr>
                             ))}
@@ -513,7 +514,7 @@ export function ManagementView() {
 
             {/* Toolbar */}
             <div className="mb-4 flex flex-wrap items-center gap-3">
-              <div className="relative flex-1 min-w-[200px]">
+              <div className="relative flex-1 min-w-48">
                 <svg className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--clr-text-3)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
                 </svg>

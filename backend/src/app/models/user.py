@@ -4,6 +4,7 @@ from app.core.database import Base
 
 
 class GlobalRole(str, enum.Enum):
+    SUPERADMIN = "SUPERADMIN"
     ADMIN = "ADMIN"
     USER = "USER"
 
