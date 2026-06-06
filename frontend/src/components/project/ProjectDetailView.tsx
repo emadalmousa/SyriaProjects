@@ -199,7 +199,7 @@ export function ProjectDetailView() {
 
           {/* Teilnehmer-Sidebar */}
           <aside style={{ width: "240px", flexShrink: 0 }}>
-              <div className="sticky top-4 rounded-card border border-line bg-surface px-4 py-4" style={{ boxShadow: "var(--sh-sm)", width: "380px", marginLeft: "-140px" }}>
+              <div className="sticky top-4 rounded-card border border-line bg-surface px-4 py-4" style={{ boxShadow: "var(--sh-sm)", width: "380px", marginInlineStart: "-140px" }}>
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-sm font-bold text-[var(--clr-text)]">{t("detail.participants")}</h2>
                   {participants.length > 0 && (
