@@ -521,5 +521,120 @@ def seed():
         db.close()
 
 
+def seed_partial():
+    """Seed ohne wipe — für den Admin-Button in der App.
+    Legt nur die 28 syria-test.com User + 50 Projekte an.
+    SUPERADMIN, admin@gmail.com und user@gmail.com bleiben unberührt.
+    """
+    db = SessionLocal()
+    try:
+        # Schon vorhanden?
+        if db.query(User).filter(User.email.like("%@syria-test.com")).first():
+            print("Testdaten bereits vorhanden.")
+            return
+
+        user_types = [UserType.INVESTOR, UserType.PROJECT_SUBMITTER, UserType.PARTNER, UserType.OTHER]
+        syrian_users = []
+        for i in range(28):
+            fn, ln = rand_name()
+            u = User(
+                email=f"user{i+1:02d}@syria-test.com",
+                hashed_password=hash_password("test1234"),
+                first_name=fn,
+                last_name=ln,
+                country="Syria",
+                global_role=GlobalRole.USER,
+                user_type=pick(user_types),
+                is_active=True,
+                email_verified=True,
+            )
+            db.add(u)
+            syrian_users.append(u)
+        db.flush()
+
+        # user@gmail.com für Projekte verwenden falls vorhanden
+        fixed_user = db.query(User).filter(User.email == "user@gmail.com").first()
+        all_users = ([fixed_user] if fixed_user else []) + syrian_users
+        submitter_pool = [u for u in all_users if u.user_type == UserType.PROJECT_SUBMITTER] or all_users
+
+        created_projects = []
+        for title, short, desc, cat, budget, own, status, risk, dur in PROJECTS:
+            owner = pick(submitter_pool) if rng.random() > 0.3 else pick(all_users)
+            proj_city, district = rand_city()
+            needed = budget - own
+            proj = Project(
+                created_by_user_id=owner.id,
+                title=title,
+                short_description=short,
+                description=desc,
+                category=cat,
+                country="Syria",
+                city=proj_city,
+                district=district,
+                total_budget=Decimal(str(budget)),
+                own_capital=Decimal(str(own)),
+                needed_capital=Decimal(str(needed)),
+                currency="EUR",
+                project_goal=f"Ziel: {short}",
+                target_customers="Einwohner des Viertels und umliegende Gebiete.",
+                business_model="Direktverkauf und lokale Lieferung.",
+                expected_monthly_revenue=Decimal(str(round(needed * 0.15, 2))),
+                expected_monthly_profit=Decimal(str(round(needed * 0.05, 2))),
+                start_date=rand_date(1),
+                expected_duration_months=dur,
+                status=status,
+                visibility=ProjectVisibility.PUBLIC,
+                verification_status=(
+                    VerificationStatus.VERIFIED if status in (
+                        ProjectStatus.APPROVED, ProjectStatus.CONTRACT,
+                        ProjectStatus.FUNDED, ProjectStatus.COMPLETED
+                    ) else VerificationStatus.NOT_CHECKED
+                ),
+                risk_level=risk,
+            )
+            db.add(proj)
+            db.flush()
+            db.add(ProjectMember(project_id=proj.id, user_id=owner.id, project_role=ProjectRole.PROJECT_OWNER))
+
+            budget_splits = picks(
+                ["Ausstattung", "Miete", "Rohstoffe", "Marketing", "Reserve", "Transport", "Löhne"],
+                min(5, rng.randint(3, 5)),
+            )
+            each = round(needed / len(budget_splits), 2)
+            for j, bname in enumerate(budget_splits):
+                db.add(ProjectBudgetItem(project_id=proj.id, title=bname, amount=Decimal(str(each)), currency="EUR", sort_order=j))
+
+            milestone_names = picks(
+                ["Standort sichern", "Ausstattung kaufen", "Umbau abschließen", "Test-Betrieb starten", "Vollbetrieb", "Erste Einnahmen"],
+                min(4, rng.randint(3, 4)),
+            )
+            ms_statuses = [MilestoneStatus.DONE, MilestoneStatus.IN_PROGRESS, MilestoneStatus.PLANNED, MilestoneStatus.PLANNED]
+            for j, mname in enumerate(milestone_names):
+                db.add(ProjectMilestone(project_id=proj.id, title=mname, target_date=rand_date(1) + timedelta(days=j * 30), status=ms_statuses[min(j, len(ms_statuses)-1)], sort_order=j))
+
+            created_projects.append((proj, owner))
+
+        db.flush()
+
+        for proj, owner in created_projects:
+            if proj.status in (ProjectStatus.REJECTED, ProjectStatus.CANCELLED):
+                continue
+            if proj.status in (ProjectStatus.APPROVED, ProjectStatus.CONTRACT, ProjectStatus.FUNDED, ProjectStatus.COMPLETED):
+                candidates = [u for u in all_users if u.id != owner.id]
+                for u in picks(candidates, min(rng.randint(3, 8), len(candidates))):
+                    db.add(ProjectInterest(project_id=proj.id, user_id=u.id, interest_type=InterestType.INVESTMENT, message="Ich möchte unterstützen.", amount=Decimal(str(round(rng.uniform(200, 2000), 2))), status=InterestStatus.ACCEPTED))
+            if proj.status == ProjectStatus.ACTIVE:
+                n_acc, n_pend = rng.randint(1, 3), rng.randint(1, 4)
+                candidates = [u for u in all_users if u.id != owner.id]
+                for idx, u in enumerate(picks(candidates, min(n_acc + n_pend, len(candidates)))):
+                    s = InterestStatus.ACCEPTED if idx < n_acc else InterestStatus.PENDING
+                    db.add(ProjectInterest(project_id=proj.id, user_id=u.id, interest_type=pick([InterestType.INVESTMENT, InterestType.SUPPORT]), message="Interesse.", amount=Decimal(str(round(rng.uniform(200, 1500), 2))) if s == InterestStatus.ACCEPTED else None, status=s))
+
+        db.commit()
+        print(f"Testdaten angelegt: {len(syrian_users)} User, {len(created_projects)} Projekte")
+    finally:
+        db.close()
+
+
 if __name__ == "__main__":
     seed()

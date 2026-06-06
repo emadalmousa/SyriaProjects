@@ -16,7 +16,7 @@ from app.routers.users import get_current_user
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
-TEST_EMAIL_DOMAIN = "@syriaprojects.sy"
+TEST_EMAIL_DOMAIN = "@syria-test.com"
 
 
 def require_admin(current_user: User = Depends(get_current_user)):
@@ -50,8 +50,8 @@ def test_data_status(db: Session = Depends(get_db), _: User = Depends(require_ad
 def seed_test_data(db: Session = Depends(get_db), _: User = Depends(require_admin)):
     if _get_test_user_ids(db):
         raise HTTPException(status_code=400, detail="Test data already exists")
-    from app.seed_demo import seed
-    seed()
+    from app.testdata import seed_partial
+    seed_partial()
     test_user_ids = _get_test_user_ids(db)
     test_project_ids = _get_test_project_ids(db, test_user_ids)
     return {"status": "seeded", "users": len(test_user_ids), "projects": len(test_project_ids)}
