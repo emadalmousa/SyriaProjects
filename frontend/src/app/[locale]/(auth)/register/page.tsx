@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
@@ -13,6 +13,71 @@ const COUNTRIES = [
   "Saudi-Arabien","Jordanien","Libanon","Ägypten","USA","Kanada","Großbritannien",
   "Frankreich","Niederlande","Schweden","Norwegen","Dänemark","Andere",
 ];
+
+function getPasswordChecks(pw: string) {
+  return {
+    length:    pw.length >= 8,
+    upper:     /[A-Z]/.test(pw),
+    lower:     /[a-z]/.test(pw),
+    number:    /[0-9]/.test(pw),
+    special:   /[^A-Za-z0-9]/.test(pw),
+  };
+}
+
+function PasswordStrengthBar({ password }: { password: string }) {
+  const checks = getPasswordChecks(password);
+  const score = Object.values(checks).filter(Boolean).length;
+
+  const bars = [
+    { min: 1, color: "bg-red-500" },
+    { min: 2, color: "bg-orange-400" },
+    { min: 3, color: "bg-yellow-400" },
+    { min: 4, color: "bg-lime-500" },
+    { min: 5, color: "bg-green-500" },
+  ];
+
+  if (!password) return null;
+
+  return (
+    <div className="flex gap-1 mt-1">
+      {bars.map((bar, i) => (
+        <div
+          key={i}
+          className={`h-1 flex-1 rounded-full transition-all duration-200 ${score > i ? bar.color : "bg-[var(--clr-line)]"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function PasswordRequirements({ password, t }: { password: string; t: (k: string) => string }) {
+  const checks = getPasswordChecks(password);
+  if (!password) return null;
+
+  const items: { key: keyof typeof checks; label: string }[] = [
+    { key: "length",  label: t("pwLength") },
+    { key: "upper",   label: t("pwUpper") },
+    { key: "lower",   label: t("pwLower") },
+    { key: "number",  label: t("pwNumber") },
+    { key: "special", label: t("pwSpecial") },
+  ];
+
+  return (
+    <ul className="mt-2 flex flex-col gap-1">
+      {items.map(({ key, label }) => (
+        <li key={key} className={`flex items-center gap-1.5 text-xs transition-colors ${checks[key] ? "text-[var(--clr-ok)]" : "text-[var(--clr-text-3)]"}`}>
+          <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            {checks[key]
+              ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              : <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            }
+          </svg>
+          {label}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function RegisterPage() {
   const t = useTranslations("auth.register");
@@ -29,9 +94,14 @@ export default function RegisterPage() {
 
   function set(field: string, value: string | boolean) { setForm((f) => ({ ...f, [field]: value })); }
 
+  const passwordValid = useMemo(() => {
+    const checks = getPasswordChecks(form.password);
+    return Object.values(checks).every(Boolean);
+  }, [form.password]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault(); setError("");
-    if (form.password.length < 8) { setError(t("passwordTooShort")); return; }
+    if (!passwordValid) { setError(t("passwordWeak")); return; }
     if (form.password !== form.confirm_password) { setError(t("passwordMismatch")); return; }
     if (!form.terms) { setError(t("acceptTerms")); return; }
     setLoading(true);
@@ -79,7 +149,11 @@ export default function RegisterPage() {
         <InputField label={t("email")} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="deine@email.de" required ltr />
 
         <div className="grid grid-cols-2 gap-3">
-          <PasswordField label={t("password")} value={form.password} onChange={(e) => set("password", e.target.value)} show={showPw} onToggleShow={() => setShowPw((v) => !v)} required minLength={8} placeholder={"••••••••"} />
+          <div>
+            <PasswordField label={t("password")} value={form.password} onChange={(e) => set("password", e.target.value)} show={showPw} onToggleShow={() => setShowPw((v) => !v)} required placeholder={"••••••••"} />
+            <PasswordStrengthBar password={form.password} />
+            <PasswordRequirements password={form.password} t={t} />
+          </div>
           <PasswordField label={t("passwordConfirm")} value={form.confirm_password} onChange={(e) => set("confirm_password", e.target.value)} show={showCf} onToggleShow={() => setShowCf((v) => !v)} required placeholder={"••••••••"} />
         </div>
 
