@@ -31,7 +31,7 @@ _first_admin_lock = threading.Lock()
 def _assign_role(db: Session) -> GlobalRole:
     admin_exists = (
         db.query(User)
-        .filter(User.global_role == GlobalRole.ADMIN)
+        .filter(User.global_role.in_([GlobalRole.ADMIN, GlobalRole.SUPERADMIN]))
         .with_for_update()
         .first()
     )
@@ -106,6 +106,24 @@ def register(
 
 
 @router.get("/verify-email", response_model=MessageResponse)
+def verify_email_check(token: str, db: Session = Depends(get_db)):
+    # GET only validates token exists — does NOT verify the email.
+    # Email scanners make GET requests automatically; actual verification requires POST.
+    auth_token = (
+        db.query(AuthToken)
+        .filter(
+            AuthToken.token == token,
+            AuthToken.token_type == TokenType.EMAIL_VERIFICATION,
+            AuthToken.used_at.is_(None),
+        )
+        .first()
+    )
+    if not auth_token:
+        raise HTTPException(status_code=400, detail="Ungültiger oder bereits benutzter Token")
+    return MessageResponse(message="Token gültig. Bitte bestätige deine E-Mail-Adresse.")
+
+
+@router.post("/verify-email", response_model=MessageResponse)
 def verify_email(token: str, db: Session = Depends(get_db)):
     now = datetime.now(timezone.utc)
     auth_token = (
@@ -129,7 +147,6 @@ def verify_email(token: str, db: Session = Depends(get_db)):
                 return MessageResponse(message="E-Mail-Adresse erfolgreich bestätigt")
         raise HTTPException(status_code=400, detail="Ungültiger oder bereits benutzter Token")
 
-    # expires_at may be naive or aware depending on DB
     expires_at = auth_token.expires_at
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)

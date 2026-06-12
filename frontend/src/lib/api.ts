@@ -30,7 +30,7 @@ export const api = {
     googleLogin: (id_token: string) =>
       request<{ access_token: string; token_type: string }>("/auth/google", { method: "POST", body: JSON.stringify({ id_token }) }),
     verifyEmail: (token: string) =>
-      request<{ message: string }>(`/auth/verify-email?token=${token}`),
+      request<{ message: string }>(`/auth/verify-email?token=${token}`, { method: "POST" }),
     resendVerification: (email: string) =>
       request<{ message: string }>("/auth/resend-verification", { method: "POST", body: JSON.stringify({ email }) }),
     forgotPassword: (email: string) =>

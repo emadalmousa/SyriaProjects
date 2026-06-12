@@ -10,15 +10,25 @@ function VerifyEmailContent() {
   const t = useTranslations("auth.verifyEmail");
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const [status, setStatus]   = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus]   = useState<"pending" | "loading" | "success" | "error">("pending");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (!token) { setStatus("error"); setMessage(t("noToken")); return; }
-    api.auth.verifyEmail(token)
-      .then(() => { setMessage(t("success")); setStatus("success"); })
-      .catch((err: unknown) => { setMessage(err instanceof Error ? err.message : t("failed")); setStatus("error"); });
+    if (!token) { setStatus("error"); setMessage(t("noToken")); }
   }, [token, t]);
+
+  async function handleConfirm() {
+    if (!token) return;
+    setStatus("loading");
+    try {
+      await api.auth.verifyEmail(token);
+      setMessage(t("success"));
+      setStatus("success");
+    } catch (err: unknown) {
+      setMessage(err instanceof Error ? err.message : t("failed"));
+      setStatus("error");
+    }
+  }
 
   return (
     <main className="auth-bg flex min-h-screen items-center justify-center px-4">
@@ -26,6 +36,18 @@ function VerifyEmailContent() {
 
         <span className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-card bg-brand font-display text-xl font-bold text-white">S</span>
         <h1 className="mb-6 font-display text-2xl font-semibold text-[var(--clr-text)]">{t("title")}</h1>
+
+        {status === "pending" && (
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-sm text-[var(--clr-text-2)]">{t("confirmPrompt")}</p>
+            <button
+              onClick={handleConfirm}
+              className="rounded-lg bg-brand px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-mid"
+            >
+              {t("confirmButton")}
+            </button>
+          </div>
+        )}
 
         {status === "loading" && (
           <div className="flex flex-col items-center gap-4">
