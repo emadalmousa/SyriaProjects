@@ -18,6 +18,8 @@ def is_allowed_origin(origin: str) -> bool:
     # Allow all Vercel preview deployments for this project
     if re.match(r"https://syriaprojects-frontend[a-z0-9\-]*\.vercel\.app$", origin):
         return True
+    if re.match(r"https://(www\.)?syria-projects\.com$", origin):
+        return True
     return False
 
 

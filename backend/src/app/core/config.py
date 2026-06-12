@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     smtp_port: int = 587
     smtp_user: str = ""
     smtp_password: str = ""
-    smtp_from: str = "noreply@syriaprojects.com"
+    smtp_from: str = "noreply@syria-projects.com"
     smtp_tls: bool = True
     email_console_mode: bool = True  # In dev: Token in Konsole ausgeben statt Email senden
     resend_api_key: str = ""
