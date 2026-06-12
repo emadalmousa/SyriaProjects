@@ -4,7 +4,6 @@ import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import { signIn } from "next-auth/react";
 import { api } from "@/lib/api";
 import { saveToken } from "@/lib/auth";
 import { Alert, Button, PageSpinner } from "@/components/ui";
@@ -20,7 +19,6 @@ function LoginContent() {
   const [password, setPassword] = useState("");
   const [error, setError]     = useState("");
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword]   = useState(false);
   const [showResend, setShowResend]       = useState(false);
   const [resendSent, setResendSent]       = useState(false);
@@ -40,18 +38,6 @@ function LoginContent() {
       if (msg === "EMAIL_NOT_VERIFIED") { setError("EMAIL_NOT_VERIFIED"); setShowResend(true); }
       else setError(msg);
     } finally { setLoading(false); }
-  }
-
-  async function handleGoogle() {
-    setGoogleLoading(true);
-    try {
-      const result = await signIn("google", { redirect: false });
-      if (result?.error) { setError(t("googleFailed")); setGoogleLoading(false); return; }
-      const { getSession } = await import("next-auth/react");
-      const session = await getSession();
-      const googleIdToken = (session as { googleIdToken?: string } | null)?.googleIdToken;
-      if (googleIdToken) { const data = await api.auth.googleLogin(googleIdToken); saveToken(data.access_token); router.push("/dashboard"); }
-    } catch { setError(t("googleFailed")); setGoogleLoading(false); }
   }
 
   async function handleResend() {
