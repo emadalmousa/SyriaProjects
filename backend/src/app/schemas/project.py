@@ -161,7 +161,7 @@ class ParticipantResponse(BaseModel):
     interest_id: int
     user_id: int
     full_name: Optional[str]
-    email: str
+    email: Optional[str]
     phone: Optional[str]
     country: Optional[str]
     amount: Optional[Decimal]
@@ -342,5 +342,29 @@ class ProjectUpdateRead(BaseModel):
     title: str
     content: str
     visibility: ProjectUpdateVisibility
+
+    model_config = {"from_attributes": True}
+
+
+class ProjectPhaseItemCreate(BaseModel):
+    milestone_id: int
+    title: str
+    amount: Decimal
+    sort_order: int = 0
+
+
+class ProjectPhaseItemUpdate(BaseModel):
+    title: str | None = None
+    amount: Decimal | None = None
+    sort_order: int | None = None
+
+
+class ProjectPhaseItemRead(BaseModel):
+    id: int
+    project_id: int
+    milestone_id: int
+    title: str
+    amount: Decimal
+    sort_order: int
 
     model_config = {"from_attributes": True}

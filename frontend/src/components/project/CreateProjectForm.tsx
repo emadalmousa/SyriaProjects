@@ -20,8 +20,15 @@ const SYRIAN_GOV_AR = [
 import { PageHeader, SectionCard } from "@/components/layout";
 import { ALL_CATEGORIES } from "@/components/project";
 
-type BudgetItem = { title: string; amount: string; is_required: boolean };
-type Milestone  = { title: string; description: string };
+type PhaseItem = { title: string; amount: string };
+type Phase = { name: string; items: PhaseItem[] };
+
+const DEFAULT_PHASES = (t: (k: string) => string): Phase[] => [
+  { name: `${t("phaseName")} 1`, items: [{ title: "", amount: "" }] },
+  { name: `${t("phaseName")} 2`, items: [{ title: "", amount: "" }] },
+  { name: `${t("phaseName")} 3`, items: [{ title: "", amount: "" }] },
+  { name: `${t("phaseName")} 4`, items: [{ title: "", amount: "" }] },
+];
 
 const addBtnCls = "text-sm font-medium text-brand hover:underline";
 const removeBtnCls = "shrink-0 text-[var(--clr-danger)] hover:opacity-80";
@@ -43,8 +50,7 @@ export function CreateProjectForm() {
     project_goal: "", target_customers: "", business_model: "",
     expected_monthly_revenue: "", expected_monthly_profit: "", expected_duration_months: "",
   });
-  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([{ title: "", amount: "", is_required: true }]);
-  const [milestones, setMilestones]   = useState<Milestone[]>([{ title: "", description: "" }]);
+  const [phases, setPhases] = useState<Phase[]>(() => DEFAULT_PHASES(t));
 
   const neededCapital = () => {
     const total = parseFloat(budget.total_budget) || 0;
@@ -52,9 +58,36 @@ export function CreateProjectForm() {
     return Math.max(total - own, 0).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
+  const phasesTotal = () =>
+    phases.flatMap((ph) => ph.items).reduce((s, it) => s + (parseFloat(it.amount) || 0), 0);
+
+  function updatePhaseItem(pi: number, ii: number, field: keyof PhaseItem, value: string) {
+    setPhases(prev => prev.map((ph, p) =>
+      p !== pi ? ph : { ...ph, items: ph.items.map((it, i) => i !== ii ? it : { ...it, [field]: value }) }
+    ));
+  }
+
+  function addItem(pi: number) {
+    setPhases(prev => prev.map((ph, p) =>
+      p !== pi ? ph : { ...ph, items: [...ph.items, { title: "", amount: "" }] }
+    ));
+  }
+
+  function removeItem(pi: number, ii: number) {
+    setPhases(prev => prev.map((ph, p) =>
+      p !== pi ? ph : { ...ph, items: ph.items.filter((_, i) => i !== ii) }
+    ));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault(); setError(""); setLoading(true);
     try {
+      const totalBudget = parseFloat(budget.total_budget) || 0;
+      if (phasesTotal() > totalBudget) {
+        setError(t("phasesTotalExceedsError", { total: totalBudget.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }));
+        setLoading(false);
+        return;
+      }
       const payload = {
         ...basics, ...location,
         total_budget: parseFloat(budget.total_budget),
@@ -68,10 +101,24 @@ export function CreateProjectForm() {
         expected_duration_months: idea.expected_duration_months ? parseInt(idea.expected_duration_months)   : null,
       };
       const project = await api.projects.create(payload) as { id: number };
-      for (const item of budgetItems.filter((i) => i.title && i.amount))
-        await api.projects.budgetItems.create(project.id, { title: item.title, amount: parseFloat(item.amount), is_required: item.is_required });
-      for (const ms of milestones.filter((m) => m.title))
-        await api.projects.milestones.create(project.id, { title: ms.title, description: ms.description || null });
+      for (let pi = 0; pi < phases.length; pi++) {
+        const phase = phases[pi];
+        const validItems = phase.items.filter((it) => it.title && it.amount);
+        if (!validItems.length) continue;
+        const ms = await api.projects.milestones.create(project.id, {
+          title: phase.name,
+          sort_order: pi,
+        }) as { id: number };
+        for (let ii = 0; ii < validItems.length; ii++) {
+          const it = validItems[ii];
+          await api.projects.phaseItems.create(project.id, {
+            milestone_id: ms.id,
+            title: it.title,
+            amount: parseFloat(it.amount),
+            sort_order: ii,
+          });
+        }
+      }
       router.push(`/projects/${project.id}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("error"));
@@ -141,44 +188,68 @@ export function CreateProjectForm() {
             </div>
           </SectionCard>
 
-          {/* 5. Budgetpositionen */}
-          <SectionCard title={t("budgetItems")} step={5}>
-            {budgetItems.map((item, i) => (
-              <div key={i} className="mb-3 grid grid-cols-3 gap-3 items-end">
-                <InputField label={i === 0 ? t("budgetItemTitle") : ""} type="text" value={item.title} onChange={(e) => { const n = [...budgetItems]; n[i].title = e.target.value; setBudgetItems(n); }} placeholder="" />
-                <InputField label={i === 0 ? t("budgetItemAmount") : ""} type="number" value={item.amount} onChange={(e) => { const n = [...budgetItems]; n[i].amount = e.target.value; setBudgetItems(n); }} placeholder="" min="0" />
-                <div className="flex items-center gap-2 pb-0.5">
-                  <label className="flex items-center gap-1.5 text-sm text-[var(--clr-text-2)]">
-                    <input type="checkbox" checked={item.is_required} onChange={(e) => { const n = [...budgetItems]; n[i].is_required = e.target.checked; setBudgetItems(n); }} className="accent-brand" />
-                    {t("budgetItemRequired")}
-                  </label>
-                  <Tooltip text={tt("removeItem")} side="top">
-                    <button type="button" onClick={() => setBudgetItems(budgetItems.filter((_, j) => j !== i))} className={removeBtnCls} aria-label={t("removeItem")}>{"✕"}</button>
-                  </Tooltip>
+          {/* 5. Phasen */}
+          <SectionCard title={t("phases")} step={5}>
+            <div className="flex flex-col gap-6">
+              {phases.map((phase, pi) => (
+                <div key={pi} className="rounded-lg border border-line p-4">
+                  <div className="mb-3">
+                    <InputField
+                      label=""
+                      type="text"
+                      value={phase.name}
+                      onChange={(e) => setPhases(prev => prev.map((ph, p) => p !== pi ? ph : { ...ph, name: e.target.value }))}
+                      className="font-semibold"
+                    />
+                  </div>
+                  {phase.items.map((item, ii) => (
+                    <div key={ii} className="mb-2 grid grid-cols-[1fr_auto_auto] gap-2 items-end">
+                      <InputField
+                        label={ii === 0 ? t("phaseItem") : ""}
+                        type="text"
+                        value={item.title}
+                        onChange={(e) => updatePhaseItem(pi, ii, "title", e.target.value)}
+                        placeholder=""
+                      />
+                      <InputField
+                        label={ii === 0 ? t("phaseItemAmount") : ""}
+                        type="number"
+                        value={item.amount}
+                        onChange={(e) => updatePhaseItem(pi, ii, "amount", e.target.value)}
+                        placeholder="0"
+                        min="0"
+                        wrapClass="w-32"
+                      />
+                      <Tooltip text={tt("removeItem")} side="top">
+                        <button
+                          type="button"
+                          onClick={() => removeItem(pi, ii)}
+                          className={`${removeBtnCls} mb-0.5`}
+                          aria-label={t("removeItem")}
+                        >{"✕"}</button>
+                      </Tooltip>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => addItem(pi)} className={addBtnCls}>
+                    {t("addPhaseItem")}
+                  </button>
                 </div>
-              </div>
-            ))}
-            <button type="button" onClick={() => setBudgetItems([...budgetItems, { title: "", amount: "", is_required: true }])} className={addBtnCls}>
-              {t("addBudgetItem")}
-            </button>
-          </SectionCard>
-
-          {/* 6. Meilensteine */}
-          <SectionCard title={t("milestones")} step={6}>
-            {milestones.map((ms, i) => (
-              <div key={i} className="mb-3 grid grid-cols-2 gap-3 items-end">
-                <InputField label={i === 0 ? t("milestoneTitle") : ""} type="text" value={ms.title} onChange={(e) => { const n = [...milestones]; n[i].title = e.target.value; setMilestones(n); }} placeholder={t("milestonePlaceholder")} />
-                <div className="flex gap-2 items-end">
-                  <InputField label={i === 0 ? t("milestoneDescription") : ""} wrapClass="flex-1" type="text" value={ms.description} onChange={(e) => { const n = [...milestones]; n[i].description = e.target.value; setMilestones(n); }} placeholder={t("milestoneDescriptionPlaceholder")} />
-                  <Tooltip text={tt("removeItem")} side="top">
-                    <button type="button" onClick={() => setMilestones(milestones.filter((_, j) => j !== i))} className={`${removeBtnCls} mb-0.5`} aria-label={t("removeItem")}>{"✕"}</button>
-                  </Tooltip>
-                </div>
-              </div>
-            ))}
-            <button type="button" onClick={() => setMilestones([...milestones, { title: "", description: "" }])} className={addBtnCls}>
-              {t("addMilestone")}
-            </button>
+              ))}
+              {(() => {
+                const total = parseFloat(budget.total_budget) || 0;
+                const used  = phasesTotal();
+                const over  = total > 0 && used > total;
+                return (
+                  <div className={`mt-2 flex justify-between rounded-lg px-4 py-3 text-sm font-medium ${over ? "bg-[var(--clr-danger)]/10 text-[var(--clr-danger)]" : "bg-surface-2 text-[var(--clr-text-2)]"}`}>
+                    <span>{t("phasesTotalLabel")}</span>
+                    <span>
+                      {used.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {total > 0 && ` / ${total.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`}
+                    </span>
+                  </div>
+                );
+              })()}
+            </div>
           </SectionCard>
 
           <Button type="submit" loading={loading} loadingLabel={t("submitting")} className="w-full" size="lg">

@@ -197,6 +197,18 @@ class ProjectMilestone(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
+class ProjectPhaseItem(Base):
+    __tablename__ = "project_phase_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    milestone_id = Column(Integer, ForeignKey("project_milestones.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(150), nullable=False)
+    amount = Column(Numeric(12, 2), nullable=False)
+    sort_order = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class ProjectUpdate(Base):
     __tablename__ = "project_updates"
 

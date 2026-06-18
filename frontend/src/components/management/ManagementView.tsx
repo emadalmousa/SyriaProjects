@@ -27,6 +27,8 @@ export function ManagementView() {
   const [testDataLoading, setTestDataLoading] = useState(false);
 
   const [activeTab, setActiveTab] = useState<"tasks" | "history" | "notifications" | "users">("tasks");
+  const [tasksSubTab, setTasksSubTab] = useState<"projects" | "requests">("projects");
+  const [historySubTab, setHistorySubTab] = useState<"projects" | "requests">("projects");
   const [tasks, setTasks] = useState<AdminTasks | null>(null);
   const [history, setHistory] = useState<AdminHistory | null>(null);
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
@@ -185,268 +187,368 @@ export function ManagementView() {
           ))}
         </div>
 
-        {/* Tasks Tab — unified table */}
+        {/* Tasks Tab */}
         {activeTab === "tasks" && (
           <div>
             {taskLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="h-6 w-6 animate-spin rounded-full border-[3px] border-brand border-t-transparent" />
               </div>
-            ) : taskCount === 0 ? (
-              <p className="text-sm text-[var(--clr-text-2)]">{tCommon("noTasks")}</p>
             ) : (
-              <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-line bg-surface-2">
-                      <tr>
-                        <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colStatus")}</th>
-                        <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colUser")}</th>
-                        <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
-                        <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colAmount")}</th>
-                        <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colRegistered")}</th>
-                        <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-
-                      {(tasks?.idea_projects ?? []).map((proj) => (
-                        <tr key={`proj-${proj.id}`} className="hover:bg-surface-2 transition-colors">
-                          <td className="px-4 py-3">
-                            <span className="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
-                              {t("taskKindProject")}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-[var(--clr-text-2)]">{proj.creator || "—"}</td>
-                          <td className="px-4 py-3">
-                            <p className="font-medium text-[var(--clr-text)]">{proj.title}</p>
-                            {proj.short_description && <p className="text-xs text-[var(--clr-text-2)] line-clamp-1">{proj.short_description}</p>}
-                            {proj.city && <p className="text-xs text-[var(--clr-text-3)]">{proj.city}</p>}
-                          </td>
-                          <td className="px-4 py-3 text-[var(--clr-text-3)]">—</td>
-                          <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(proj.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex gap-2">
-                              <Tooltip text={tt("approveProject")} side="top"><button onClick={async () => { await api.admin.approveProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button></Tooltip>
-                              <Tooltip text={tt("rejectProject")} side="top"><button onClick={async () => { await api.admin.rejectProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button></Tooltip>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-
-                      {(tasks?.pending_interests ?? []).map((interest) => (
-                        <tr key={`int-${interest.id}`} className="hover:bg-surface-2 transition-colors">
-                          <td className="px-4 py-3">
-                            <span className="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">
-                              {t("taskKindInterest")}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="font-medium text-[var(--clr-text)]">{interest.user_name}</p>
-                            <p className="text-xs text-[var(--clr-text-2)]">{interest.user_email}</p>
-                          </td>
-                          <td className="px-4 py-3 text-[var(--clr-text-2)]">{interest.project_title}</td>
-                          <td className="px-4 py-3 text-sm font-semibold text-[var(--clr-brand)]">{interest.amount ? `${interest.amount.toLocaleString()} €` : "—"}</td>
-                          <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(interest.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex gap-2">
-                              <Tooltip text={tt("approveInterest")} side="top"><button onClick={async () => { await api.admin.approveInterest(interest.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button></Tooltip>
-                              <Tooltip text={tt("rejectInterest")} side="top"><button onClick={async () => { await api.admin.rejectInterest(interest.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button></Tooltip>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-
-                      {(tasks?.pending_requests ?? []).map((req: AdminRequest) => {
-                        let detail = "";
-                        try {
-                          const p = req.payload ? JSON.parse(req.payload) : {};
-                          if (p.amount) detail = `${Number(p.amount).toLocaleString()} €`;
-                          else if (p.field) detail = p.value ? `${p.field} → ${p.value}` : p.field;
-                        } catch { /* ignore */ }
-                        return (
-                          <tr key={`req-${req.id}`} className="hover:bg-surface-2 transition-colors">
-                            <td className="px-4 py-3">
-                              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                                {t("taskKindRequest")}
-                              </span>
-                              <p className="mt-1 text-xs text-[var(--clr-text-2)]">{tProject(`requestTypeLabel.${req.type}`)}</p>
-                            </td>
-                            <td className="px-4 py-3 text-[var(--clr-text-2)]">{req.requester_name || "—"}</td>
-                            <td className="px-4 py-3 text-[var(--clr-text-2)]">{req.project_title || "—"}</td>
-                            <td className="px-4 py-3 text-xs text-[var(--clr-brand)]">{detail || "—"}</td>
-                            <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(req.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                            <td className="px-4 py-3">
-                              <div className="flex gap-2">
-                                <Tooltip text={tt("approveRequest")} side="top"><button onClick={async () => { await api.admin.approveRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button></Tooltip>
-                                <Tooltip text={tt("rejectRequest")} side="top"><button onClick={async () => { await api.admin.rejectRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button></Tooltip>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-
-                    </tbody>
-                  </table>
+              <>
+                {/* Sub-tabs */}
+                <div className="mb-5 flex gap-1 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface-2)] p-1 w-fit">
+                  <button
+                    onClick={() => setTasksSubTab("projects")}
+                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition
+                      ${tasksSubTab === "projects"
+                        ? "bg-[var(--clr-brand)] text-white"
+                        : "text-[var(--clr-text-2)] hover:text-[var(--clr-text)]"
+                      }`}
+                  >
+                    {t("historyProjects")}
+                    {(tasks?.idea_projects.length ?? 0) > 0 && (
+                      <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold leading-none ${tasksSubTab === "projects" ? "bg-white/20 text-white" : "bg-red-500 text-white"}`}>
+                        {tasks!.idea_projects.length}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setTasksSubTab("requests")}
+                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition
+                      ${tasksSubTab === "requests"
+                        ? "bg-[var(--clr-brand)] text-white"
+                        : "text-[var(--clr-text-2)] hover:text-[var(--clr-text)]"
+                      }`}
+                  >
+                    {t("historyInterests")}
+                    {((tasks?.pending_interests.length ?? 0) + (tasks?.pending_requests?.length ?? 0)) > 0 && (
+                      <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold leading-none ${tasksSubTab === "requests" ? "bg-white/20 text-white" : "bg-red-500 text-white"}`}>
+                        {(tasks?.pending_interests.length ?? 0) + (tasks?.pending_requests?.length ?? 0)}
+                      </span>
+                    )}
+                  </button>
                 </div>
-              </div>
+
+                {/* Sub-tab: Projekt */}
+                {tasksSubTab === "projects" && (
+                  <>
+                    {!(tasks?.idea_projects.length) ? (
+                      <p className="text-sm text-[var(--clr-text-2)]">{tCommon("noTasks")}</p>
+                    ) : (
+                      <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead className="border-b border-line bg-surface-2">
+                              <tr>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colUser")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colRegistered")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-line">
+                              {(tasks?.idea_projects ?? []).map((proj) => (
+                                <tr key={`proj-${proj.id}`} onClick={() => router.push(`/projects/${proj.id}`)} className="cursor-pointer hover:bg-surface-2 transition-colors">
+                                  <td className="px-4 py-3 text-[var(--clr-text-2)]">{proj.creator || "—"}</td>
+                                  <td className="px-4 py-3">
+                                    <p className="font-medium text-[var(--clr-text)]">{proj.title}</p>
+                                    {proj.short_description && <p className="text-xs text-[var(--clr-text-2)] line-clamp-1">{proj.short_description}</p>}
+                                    {proj.city && <p className="text-xs text-[var(--clr-text-3)]">{proj.city}</p>}
+                                  </td>
+                                  <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(proj.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex gap-2">
+                                      <Tooltip text={tt("approveProject")} side="top"><button onClick={async () => { await api.admin.approveProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button></Tooltip>
+                                      <Tooltip text={tt("rejectProject")} side="top"><button onClick={async () => { await api.admin.rejectProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button></Tooltip>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Sub-tab: Beitrittsanfrage */}
+                {tasksSubTab === "requests" && (
+                  <div className="space-y-6">
+                    {/* Interests */}
+                    {(tasks?.pending_interests.length ?? 0) > 0 && (
+                      <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead className="border-b border-line bg-surface-2">
+                              <tr>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colUser")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colAmount")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colRegistered")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-line">
+                              {(tasks?.pending_interests ?? []).map((interest) => (
+                                <tr key={`int-${interest.id}`} onClick={() => router.push(`/projects/${interest.project_id}`)} className="cursor-pointer hover:bg-surface-2 transition-colors">
+                                  <td className="px-4 py-3">
+                                    <p className="font-medium text-[var(--clr-text)]">{interest.user_name}</p>
+                                    <p className="text-xs text-[var(--clr-text-2)]">{interest.user_email}</p>
+                                  </td>
+                                  <td className="px-4 py-3 text-[var(--clr-text-2)]">{interest.project_title}</td>
+                                  <td className="px-4 py-3 text-sm font-semibold text-[var(--clr-brand)]">{interest.amount ? `${interest.amount.toLocaleString()} €` : "—"}</td>
+                                  <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(interest.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex gap-2">
+                                      <Tooltip text={tt("approveInterest")} side="top"><button onClick={async () => { await api.admin.approveInterest(interest.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button></Tooltip>
+                                      <Tooltip text={tt("rejectInterest")} side="top"><button onClick={async () => { await api.admin.rejectInterest(interest.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button></Tooltip>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Requests */}
+                    {(tasks?.pending_requests?.length ?? 0) > 0 && (
+                      <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead className="border-b border-line bg-surface-2">
+                              <tr>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colType")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colUser")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colAmount")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colRegistered")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-line">
+                              {(tasks?.pending_requests ?? []).map((req: AdminRequest) => {
+                                let detail = "";
+                                try {
+                                  const p = req.payload ? JSON.parse(req.payload) : {};
+                                  if (p.amount) detail = `${Number(p.amount).toLocaleString()} €`;
+                                  else if (p.field) detail = p.value ? `${p.field} → ${p.value}` : p.field;
+                                } catch { /* ignore */ }
+                                return (
+                                  <tr key={`req-${req.id}`} onClick={() => req.project_id && router.push(`/projects/${req.project_id}`)} className={`hover:bg-surface-2 transition-colors ${req.project_id ? "cursor-pointer" : ""}`}>
+                                    <td className="px-4 py-3">
+                                      <p className="font-medium text-[var(--clr-text)]">{tProject(`requestTypeLabel.${req.type}`)}</p>
+                                    </td>
+                                    <td className="px-4 py-3 text-[var(--clr-text-2)]">{req.requester_name || "—"}</td>
+                                    <td className="px-4 py-3 text-[var(--clr-text-2)]">{req.project_title || "—"}</td>
+                                    <td className="px-4 py-3 text-xs text-[var(--clr-brand)]">{detail || "—"}</td>
+                                    <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(req.created_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                      <div className="flex gap-2">
+                                        <Tooltip text={tt("approveRequest")} side="top"><button onClick={async () => { await api.admin.approveRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700">{tCommon("approve")}</button></Tooltip>
+                                        <Tooltip text={tt("rejectRequest")} side="top"><button onClick={async () => { await api.admin.rejectRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">{tCommon("reject")}</button></Tooltip>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {(tasks?.pending_interests.length ?? 0) === 0 && (tasks?.pending_requests?.length ?? 0) === 0 && (
+                      <p className="text-sm text-[var(--clr-text-2)]">{tCommon("noTasks")}</p>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
 
         {/* History Tab */}
         {activeTab === "history" && (
-          <div className="space-y-6">
+          <div>
             {historyLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="h-6 w-6 animate-spin rounded-full border-[3px] border-brand border-t-transparent" />
               </div>
             ) : (
               <>
-                {/* Reviewed Projects */}
-                <section>
-                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--clr-text-2)]">
+                {/* Sub-tabs */}
+                <div className="mb-5 flex gap-1 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface-2)] p-1 w-fit">
+                  <button
+                    onClick={() => setHistorySubTab("projects")}
+                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition
+                      ${historySubTab === "projects"
+                        ? "bg-[var(--clr-brand)] text-white"
+                        : "text-[var(--clr-text-2)] hover:text-[var(--clr-text)]"
+                      }`}
+                  >
                     {t("historyProjects")}
-                    {history?.reviewed_projects.length ? ` (${history.reviewed_projects.length})` : ""}
-                  </h3>
-                  {!history?.reviewed_projects.length ? (
-                    <p className="text-sm text-[var(--clr-text-2)]">{t("noHistory")}</p>
-                  ) : (
-                    <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead className="border-b border-line bg-surface-2">
-                            <tr>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colRequester")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colResult")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colDecidedAt")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-line">
-                            {(history?.reviewed_projects ?? []).map((proj: HistoryProject) => (
-                              <tr key={proj.id} className="hover:bg-surface-2 transition-colors">
-                                <td className="px-4 py-3">
-                                  <p className="font-medium text-[var(--clr-text)]">{proj.title}</p>
-                                  {proj.city && <p className="text-xs text-[var(--clr-text-3)]">{proj.city}</p>}
-                                </td>
-                                <td className="px-4 py-3 text-[var(--clr-text-2)]">{proj.creator || "—"}</td>
-                                <td className="px-4 py-3">
-                                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${proj.status === "ACTIVE" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
-                                    {proj.status === "ACTIVE" ? t("resultApproved") : t("resultRejected")}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(proj.decided_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                                <td className="px-4 py-3">
-                                  <Tooltip text={tt("reopenProject")} side="top"><button onClick={async () => { await api.admin.reopenProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button></Tooltip>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                </section>
-
-                {/* Reviewed Interests */}
-                <section>
-                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--clr-text-2)]">
+                    {(history?.reviewed_projects.length ?? 0) > 0 && (
+                      <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold leading-none ${historySubTab === "projects" ? "bg-white/20 text-white" : "bg-[var(--clr-brand)]/10 text-[var(--clr-brand)]"}`}>
+                        {history!.reviewed_projects.length}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setHistorySubTab("requests")}
+                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition
+                      ${historySubTab === "requests"
+                        ? "bg-[var(--clr-brand)] text-white"
+                        : "text-[var(--clr-text-2)] hover:text-[var(--clr-text)]"
+                      }`}
+                  >
                     {t("historyInterests")}
-                    {history?.reviewed_interests.length ? ` (${history.reviewed_interests.length})` : ""}
-                  </h3>
-                  {!history?.reviewed_interests.length ? (
-                    <p className="text-sm text-[var(--clr-text-2)]">{t("noHistory")}</p>
-                  ) : (
-                    <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead className="border-b border-line bg-surface-2">
-                            <tr>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colUser")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colAmount")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colResult")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colDecidedAt")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-line">
-                            {(history?.reviewed_interests ?? []).map((item: HistoryInterest) => (
-                              <tr key={item.id} className="hover:bg-surface-2 transition-colors">
-                                <td className="px-4 py-3">
-                                  <p className="font-medium text-[var(--clr-text)]">{item.user_name || "—"}</p>
-                                  {item.user_email && <p className="text-xs text-[var(--clr-text-2)]">{item.user_email}</p>}
-                                </td>
-                                <td className="px-4 py-3 text-[var(--clr-text-2)]">{item.project_title || "—"}</td>
-                                <td className="px-4 py-3 text-sm font-semibold text-[var(--clr-brand)]">{item.amount ? `${item.amount.toLocaleString()} €` : "—"}</td>
-                                <td className="px-4 py-3">
-                                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${item.status === "ACCEPTED" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
-                                    {item.status === "ACCEPTED" ? t("resultApproved") : t("resultRejected")}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(item.decided_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                                <td className="px-4 py-3">
-                                  <Tooltip text={tt("reopenInterest")} side="top"><button onClick={async () => { await api.admin.reopenInterest(item.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button></Tooltip>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                </section>
+                    {((history?.reviewed_interests.length ?? 0) + (history?.reviewed_requests.length ?? 0)) > 0 && (
+                      <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold leading-none ${historySubTab === "requests" ? "bg-white/20 text-white" : "bg-[var(--clr-brand)]/10 text-[var(--clr-brand)]"}`}>
+                        {(history?.reviewed_interests.length ?? 0) + (history?.reviewed_requests.length ?? 0)}
+                      </span>
+                    )}
+                  </button>
+                </div>
 
-                {/* Reviewed Requests */}
-                <section>
-                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--clr-text-2)]">
-                    {t("historyRequests")}
-                    {history?.reviewed_requests.length ? ` (${history.reviewed_requests.length})` : ""}
-                  </h3>
-                  {!history?.reviewed_requests.length ? (
-                    <p className="text-sm text-[var(--clr-text-2)]">{t("noHistory")}</p>
-                  ) : (
-                    <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead className="border-b border-line bg-surface-2">
-                            <tr>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colType")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colRequester")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colResult")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colDecidedAt")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-line">
-                            {(history?.reviewed_requests ?? []).map((req: HistoryRequest) => (
-                              <tr key={req.id} className="hover:bg-surface-2 transition-colors">
-                                <td className="px-4 py-3">
-                                  <p className="font-medium text-[var(--clr-text)]">{tProject(`requestTypeLabel.${req.type}`)}</p>
-                                  {req.admin_note && <p className="text-xs text-red-500">{req.admin_note}</p>}
-                                </td>
-                                <td className="px-4 py-3 text-[var(--clr-text-2)]">{req.requester_name || "—"}</td>
-                                <td className="px-4 py-3 text-[var(--clr-text-2)]">{req.project_title || "—"}</td>
-                                <td className="px-4 py-3">
-                                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${req.status === "ACCEPTED" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
-                                    {req.status === "ACCEPTED" ? t("resultApproved") : t("resultRejected")}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(req.decided_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                                <td className="px-4 py-3">
-                                  <Tooltip text={tt("reopenRequest")} side="top"><button onClick={async () => { await api.admin.reopenRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button></Tooltip>
-                                </td>
+                {/* Sub-tab: Bearbeitete Projekte */}
+                {historySubTab === "projects" && (
+                  <>
+                    {!history?.reviewed_projects.length ? (
+                      <p className="text-sm text-[var(--clr-text-2)]">{t("noHistory")}</p>
+                    ) : (
+                      <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead className="border-b border-line bg-surface-2">
+                              <tr>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colRequester")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colResult")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colDecidedAt")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody className="divide-y divide-line">
+                              {(history?.reviewed_projects ?? []).map((proj: HistoryProject) => (
+                                <tr key={proj.id} onClick={() => router.push(`/projects/${proj.id}`)} className="cursor-pointer hover:bg-surface-2 transition-colors">
+                                  <td className="px-4 py-3">
+                                    <p className="font-medium text-[var(--clr-text)]">{proj.title}</p>
+                                    {proj.city && <p className="text-xs text-[var(--clr-text-3)]">{proj.city}</p>}
+                                  </td>
+                                  <td className="px-4 py-3 text-[var(--clr-text-2)]">{proj.creator || "—"}</td>
+                                  <td className="px-4 py-3">
+                                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${proj.status === "ACTIVE" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
+                                      {proj.status === "ACTIVE" ? t("resultApproved") : t("resultRejected")}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(proj.decided_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                    <Tooltip text={tt("reopenProject")} side="top"><button onClick={async () => { await api.admin.reopenProject(proj.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button></Tooltip>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </section>
+                    )}
+                  </>
+                )}
+
+                {/* Sub-tab: Bearbeitete Beitrittsanfragen (Interests + Requests) */}
+                {historySubTab === "requests" && (
+                  <div className="space-y-6">
+                    {/* Interests */}
+                    {(history?.reviewed_interests.length ?? 0) > 0 && (
+                      <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead className="border-b border-line bg-surface-2">
+                              <tr>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colUser")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colAmount")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colResult")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colDecidedAt")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-line">
+                              {(history?.reviewed_interests ?? []).map((item: HistoryInterest) => (
+                                <tr key={item.id} onClick={() => router.push(`/projects/${item.project_id}`)} className="cursor-pointer hover:bg-surface-2 transition-colors">
+                                  <td className="px-4 py-3">
+                                    <p className="font-medium text-[var(--clr-text)]">{item.user_name || "—"}</p>
+                                    {item.user_email && <p className="text-xs text-[var(--clr-text-2)]">{item.user_email}</p>}
+                                  </td>
+                                  <td className="px-4 py-3 text-[var(--clr-text-2)]">{item.project_title || "—"}</td>
+                                  <td className="px-4 py-3 text-sm font-semibold text-[var(--clr-brand)]">{item.amount ? `${item.amount.toLocaleString()} €` : "—"}</td>
+                                  <td className="px-4 py-3">
+                                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${item.status === "ACCEPTED" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
+                                      {item.status === "ACCEPTED" ? t("resultApproved") : t("resultRejected")}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(item.decided_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                    <Tooltip text={tt("reopenInterest")} side="top"><button onClick={async () => { await api.admin.reopenInterest(item.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button></Tooltip>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Requests */}
+                    {(history?.reviewed_requests.length ?? 0) > 0 && (
+                      <div className="overflow-hidden rounded-card border border-line bg-surface" style={{ boxShadow: "var(--sh-sm)" }}>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead className="border-b border-line bg-surface-2">
+                              <tr>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colType")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colRequester")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colResult")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colDecidedAt")}</th>
+                                <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-line">
+                              {(history?.reviewed_requests ?? []).map((req: HistoryRequest) => (
+                                <tr key={req.id} onClick={() => req.project_id && router.push(`/projects/${req.project_id}`)} className={`hover:bg-surface-2 transition-colors ${req.project_id ? "cursor-pointer" : ""}`}>
+                                  <td className="px-4 py-3">
+                                    <p className="font-medium text-[var(--clr-text)]">{tProject(`requestTypeLabel.${req.type}`)}</p>
+                                    {req.admin_note && <p className="text-xs text-red-500">{req.admin_note}</p>}
+                                  </td>
+                                  <td className="px-4 py-3 text-[var(--clr-text-2)]">{req.requester_name || "—"}</td>
+                                  <td className="px-4 py-3 text-[var(--clr-text-2)]">{req.project_title || "—"}</td>
+                                  <td className="px-4 py-3">
+                                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${req.status === "ACCEPTED" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
+                                      {req.status === "ACCEPTED" ? t("resultApproved") : t("resultRejected")}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(req.decided_at).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                    <Tooltip text={tt("reopenRequest")} side="top"><button onClick={async () => { await api.admin.reopenRequest(req.id); setTasks(await api.admin.tasks() as AdminTasks); setHistory(await api.admin.history() as AdminHistory); }} className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-[var(--clr-text-2)] hover:border-brand hover:text-brand transition-colors">{t("reopen")}</button></Tooltip>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {(history?.reviewed_interests.length ?? 0) === 0 && (history?.reviewed_requests.length ?? 0) === 0 && (
+                      <p className="text-sm text-[var(--clr-text-2)]">{t("noHistory")}</p>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>

@@ -68,7 +68,7 @@ export interface Participant {
   interest_id: number;
   user_id: number;
   full_name: string | null;
-  email: string;
+  email: string | null;
   phone: string | null;
   country: string | null;
   amount: number | null;
@@ -78,6 +78,7 @@ export interface Participant {
 
 export interface Project extends ProjectListItem {
   created_by_user_id: number;
+  creator_name?: string | null;
   created_at?: string | null;
   address_text?: string | null;
   description: string;
@@ -114,6 +115,15 @@ export interface ProjectMilestone {
   description: string | null;
   target_date: string | null;
   status: MilestoneStatus;
+  sort_order: number;
+}
+
+export interface ProjectPhaseItem {
+  id: number;
+  project_id: number;
+  milestone_id: number;
+  title: string;
+  amount: number;
   sort_order: number;
 }
 

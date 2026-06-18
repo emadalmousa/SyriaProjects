@@ -50,8 +50,8 @@
   "colResult": "النتيجة",
   "reopen": "إعادة فتح",
   "noHistory": "لا توجد مهام منجزة",
-  "historyProjects": "المشاريع المعالجة",
-  "historyInterests": "طلبات الانضمام المعالجة",
+  "historyProjects": "المشروع",
+  "historyInterests": "طلب الانضمام",
   "historyRequests": "الطلبات المعالجة",
   "resultApproved": "مقبول",
   "resultRejected": "مرفوض"

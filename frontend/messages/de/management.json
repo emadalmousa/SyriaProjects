@@ -50,8 +50,8 @@
   "colResult": "Ergebnis",
   "reopen": "Wieder öffnen",
   "noHistory": "Keine bearbeiteten Aufgaben",
-  "historyProjects": "Bearbeitete Projekte",
-  "historyInterests": "Bearbeitete Beitrittsanfragen",
+  "historyProjects": "Projekt",
+  "historyInterests": "Beitrittsanfrage",
   "historyRequests": "Bearbeitete Anträge",
   "resultApproved": "Genehmigt",
   "resultRejected": "Abgelehnt"

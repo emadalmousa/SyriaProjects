@@ -50,8 +50,8 @@
   "colResult": "Result",
   "reopen": "Reopen",
   "noHistory": "No completed tasks",
-  "historyProjects": "Reviewed projects",
-  "historyInterests": "Reviewed join requests",
+  "historyProjects": "Project",
+  "historyInterests": "Join request",
   "historyRequests": "Reviewed requests",
   "resultApproved": "Approved",
   "resultRejected": "Rejected"

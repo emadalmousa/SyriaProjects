@@ -138,6 +138,15 @@ export const api = {
       delete: (projectId: number, milestoneId: number) =>
         request(`/projects/${projectId}/milestones/${milestoneId}`, { method: "DELETE" }),
     },
+    phaseItems: {
+      list: (projectId: number) => request(`/projects/${projectId}/phase-items`),
+      create: (projectId: number, data: object) =>
+        request(`/projects/${projectId}/phase-items`, { method: "POST", body: JSON.stringify(data) }),
+      update: (projectId: number, itemId: number, data: object) =>
+        request(`/projects/${projectId}/phase-items/${itemId}`, { method: "PATCH", body: JSON.stringify(data) }),
+      delete: (projectId: number, itemId: number) =>
+        request(`/projects/${projectId}/phase-items/${itemId}`, { method: "DELETE" }),
+    },
     updates: {
       list: (projectId: number) => request(`/projects/${projectId}/updates`),
       create: (projectId: number, data: object) =>
