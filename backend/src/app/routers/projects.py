@@ -1,7 +1,7 @@
 from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, field_validator
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
 from app.core.helpers import calculate_funding_progress
 from app.core.notifications import create_notification
@@ -9,7 +9,7 @@ from app.core.permissions import is_admin, require_project_roles
 from app.models.notification import NotificationType
 from app.models.project import (
     InterestStatus, InterestType, Project, ProjectBudgetItem, ProjectInterest,
-    ProjectMember, ProjectMilestone, ProjectRole, ProjectStatus,
+    ProjectMember, ProjectMilestone, ProjectPhaseItem, ProjectRole, ProjectStatus,
     ProjectUpdate as ProjectUpdateModel, ProjectVisibility,
 )
 from app.models.user import User
@@ -19,7 +19,8 @@ from app.schemas.project import (
     ProjectBudgetItemUpdate, ProjectCreate, ProjectInterestCreate,
     ParticipantResponse, ProjectInterestResponse, ProjectListItem, ProjectMemberAdd,
     ProjectMemberResponse, ProjectMilestoneCreate, ProjectMilestoneRead,
-    ProjectMilestoneUpdate, ProjectRead, ProjectReadAdmin, ProjectStatusUpdate,
+    ProjectMilestoneUpdate, ProjectPhaseItemCreate, ProjectPhaseItemRead,
+    ProjectPhaseItemUpdate, ProjectRead, ProjectReadAdmin, ProjectStatusUpdate,
     ProjectUpdate as ProjectUpdateSchema, ProjectUpdateCreate, ProjectUpdateRead,
     ProjectUpdateUpdate, ProjectVisibilityUpdate,
 )
@@ -72,7 +73,7 @@ def list_public_projects(db: Session = Depends(get_db)):
 @router.get("/", response_model=list[ProjectListItem])
 def list_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if is_admin(current_user):
-        projects = db.query(Project).all()
+        projects = db.query(Project).limit(500).all()
     else:
         projects = (
             db.query(Project)
@@ -80,6 +81,7 @@ def list_projects(db: Session = Depends(get_db), current_user: User = Depends(ge
                 Project.visibility == ProjectVisibility.PUBLIC,
                 Project.status.in_(PUBLIC_STATUSES),
             )
+            .limit(500)
             .all()
         )
     return [enrich_project_item(p, db) for p in projects]
@@ -108,6 +110,8 @@ def create_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if data.own_capital and data.total_budget and data.own_capital > data.total_budget:
+        raise HTTPException(status_code=422, detail="Eigenkapital darf nicht größer als Gesamtbudget sein")
     project_data = data.model_dump()
     project = Project(**project_data, created_by_user_id=current_user.id)
     db.add(project)
@@ -159,6 +163,8 @@ def get_project(
     else:
         result = ProjectRead.model_validate(project).model_dump()
     result["funding_progress"] = fp
+    creator = db.get(User, project.created_by_user_id)
+    result["creator_name"] = creator.full_name or creator.email if creator else None
     return result
 
 
@@ -178,7 +184,12 @@ def update_project(
             status_code=403,
             detail="Direkte Änderungen sind nicht erlaubt. Nutze /projects/{id}/change-request",
         )
-    for field, value in data.model_dump(exclude_unset=True).items():
+    update_data = data.model_dump(exclude_unset=True)
+    own_capital = update_data.get("own_capital", project.own_capital)
+    total_budget = update_data.get("total_budget", project.total_budget)
+    if own_capital and total_budget and own_capital > total_budget:
+        raise HTTPException(status_code=422, detail="Eigenkapital darf nicht größer als Gesamtbudget sein")
+    for field, value in update_data.items():
         setattr(project, field, value)
     db.commit()
     db.refresh(project)
@@ -364,16 +375,22 @@ def get_participants(
     project = db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
-    interests = db.query(ProjectInterest).filter(
-        ProjectInterest.project_id == project_id,
-        ProjectInterest.status.in_([InterestStatus.PENDING, InterestStatus.ACCEPTED]),
-    ).all()
+    interests_with_users = (
+        db.query(ProjectInterest, User)
+        .join(User, User.id == ProjectInterest.user_id)
+        .filter(
+            ProjectInterest.project_id == project_id,
+            ProjectInterest.status.in_([
+                InterestStatus.PENDING,
+                InterestStatus.ACCEPTED,
+                InterestStatus.WITHDRAWN,
+            ]),
+        )
+        .all()
+    )
     show_private = project.created_by_user_id == current_user.id or is_admin(current_user)
     result = []
-    for interest in interests:
-        user = db.get(User, interest.user_id)
-        if not user:
-            continue
+    for interest, user in interests_with_users:
         result.append(ParticipantResponse(
             interest_id=interest.id,
             user_id=user.id,
@@ -554,6 +571,63 @@ def delete_milestone(
     if not milestone or milestone.project_id != project_id:
         raise HTTPException(status_code=404, detail="Meilenstein nicht gefunden")
     db.delete(milestone)
+    db.commit()
+
+
+# Phase Items
+@router.get("/{project_id}/phase-items", response_model=list[ProjectPhaseItemRead])
+def get_phase_items(project_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    return db.query(ProjectPhaseItem).filter(
+        ProjectPhaseItem.project_id == project_id
+    ).order_by(ProjectPhaseItem.milestone_id, ProjectPhaseItem.sort_order).all()
+
+
+@router.post("/{project_id}/phase-items", response_model=ProjectPhaseItemRead, status_code=status.HTTP_201_CREATED)
+def add_phase_item(
+    project_id: int,
+    data: ProjectPhaseItemCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    require_project_roles(current_user, db, project_id, [ProjectRole.PROJECT_OWNER, ProjectRole.PROJECT_ADMIN])
+    item = ProjectPhaseItem(project_id=project_id, **data.model_dump())
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.patch("/{project_id}/phase-items/{item_id}", response_model=ProjectPhaseItemRead)
+def update_phase_item(
+    project_id: int,
+    item_id: int,
+    data: ProjectPhaseItemUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    require_project_roles(current_user, db, project_id, [ProjectRole.PROJECT_OWNER, ProjectRole.PROJECT_ADMIN])
+    item = db.get(ProjectPhaseItem, item_id)
+    if not item or item.project_id != project_id:
+        raise HTTPException(status_code=404, detail="Phase-Position nicht gefunden")
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(item, field, value)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.delete("/{project_id}/phase-items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_phase_item(
+    project_id: int,
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    require_project_roles(current_user, db, project_id, [ProjectRole.PROJECT_OWNER, ProjectRole.PROJECT_ADMIN])
+    item = db.get(ProjectPhaseItem, item_id)
+    if not item or item.project_id != project_id:
+        raise HTTPException(status_code=404, detail="Phase-Position nicht gefunden")
+    db.delete(item)
     db.commit()
 
 

@@ -1,4 +1,4 @@
-export { StatusBadge, StatusSelect, STATUS_COLORS, ALL_STATUSES } from "./StatusBadge";
+export { StatusBadge, StatusSelect, STATUS_COLORS, ALL_STATUSES, ADMIN_SETTABLE_STATUSES } from "./StatusBadge";
 export { CategoryBadge, CATEGORY_ICONS, ALL_CATEGORIES } from "./CategoryBadge";
 export { FundingBar } from "./FundingBar";
 export { ProjectCard } from "./ProjectCard";

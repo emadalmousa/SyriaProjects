@@ -6,7 +6,7 @@ import type { ProjectStatus } from "@/types";
 export const STATUS_COLORS: Record<string, string> = {
   IDEA:      "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400",
   ACTIVE:    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
-  APPROVED:  "bg-[var(--clr-info-dim)] text-[var(--clr-info)] dark:bg-blue-900/30 dark:text-blue-400",
+  APPROVED:  "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
   CONTRACT:  "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400",
   FUNDED:    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
   COMPLETED: "bg-surface-2 text-[var(--clr-text-2)] dark:bg-gray-700 dark:text-gray-300",
@@ -18,6 +18,12 @@ export const STATUS_COLORS: Record<string, string> = {
 export const ALL_STATUSES: ProjectStatus[] = [
   "IDEA", "ACTIVE", "APPROVED", "CONTRACT", "FUNDED",
   "COMPLETED", "CANCELLED", "PAUSED", "REJECTED",
+];
+
+// Statuses that admin can manually set — excludes IDEA (auto-set on creation) and REJECTED (set via rejection flow)
+export const ADMIN_SETTABLE_STATUSES: ProjectStatus[] = [
+  "ACTIVE", "APPROVED", "CONTRACT", "FUNDED",
+  "COMPLETED", "CANCELLED", "PAUSED",
 ];
 
 interface StatusBadgeProps {
@@ -40,9 +46,10 @@ interface StatusSelectProps {
   disabled?: boolean;
   onChange: (value: string) => void;
   loading?: boolean;
+  statuses?: ProjectStatus[];
 }
 
-export function StatusSelect({ status, disabled, onChange, loading }: StatusSelectProps) {
+export function StatusSelect({ status, disabled, onChange, loading, statuses = ADMIN_SETTABLE_STATUSES }: StatusSelectProps) {
   const t = useTranslations("project");
   const color = STATUS_COLORS[status] ?? "bg-[var(--clr-info-dim)] text-[var(--clr-info)]";
   return (
@@ -54,7 +61,7 @@ export function StatusSelect({ status, disabled, onChange, loading }: StatusSele
         className={`cursor-pointer appearance-none rounded-pill border py-1 ps-3 pe-6 text-xs font-semibold outline-none transition
           ${loading ? "opacity-50" : ""} ${color}`}
       >
-        {ALL_STATUSES.map((s) => (
+        {statuses.map((s) => (
           <option key={s} value={s} className="bg-white text-gray-900 dark:bg-gray-800 dark:text-white">
             {t(`status.${s}` as Parameters<typeof t>[0])}
           </option>

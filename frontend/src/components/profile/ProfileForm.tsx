@@ -297,7 +297,7 @@ export function ProfileForm() {
                               ? "bg-gray-100 text-gray-600 dark:bg-gray-800/40 dark:text-gray-400"
                               : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                           }`}>
-                            {p.status === "ACCEPTED" ? tProject("joinApproved") : p.status === "REJECTED" ? tProject("joinRejected") : p.status === "WITHDRAWN" ? tProject("withdrawParticipation") : tProject("joinPending")}
+                            {p.status === "ACCEPTED" ? tProject("joinApproved") : p.status === "REJECTED" ? tProject("joinRejected") : p.status === "WITHDRAWN" ? tProject("withdrawnStatus") : tProject("joinPending")}
                           </span>
                         </div>
 

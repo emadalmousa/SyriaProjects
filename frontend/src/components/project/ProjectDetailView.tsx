@@ -5,11 +5,12 @@ import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { formatMoney, formatPercent } from "@/lib/format";
-import type { Project, ProjectBudgetItem, ProjectMilestone, ProjectUpdate, User, Participant } from "@/types";
+import type { Project, ProjectMilestone, ProjectPhaseItem, ProjectUpdate, User, Participant } from "@/types";
 import { PageSpinner, Card, Alert, Tooltip } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
 import { StatusBadge, CategoryBadge, FundingBar, ALL_CATEGORIES } from "@/components/project";
 import { InputField, SelectField, TextareaField } from "@/components/ui";
+import { ConfirmDialog } from "@/components/management";
 
 const SYRIAN_GOV_EN = [
   "Damascus", "Rural Damascus", "Aleppo", "Homs", "Hama",
@@ -72,17 +73,25 @@ export function ProjectDetailView() {
 
   const [project, setProject]         = useState<Project | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [budgetItems, setBudgetItems] = useState<ProjectBudgetItem[]>([]);
-  const [milestones, setMilestones]   = useState<ProjectMilestone[]>([]);
+  const [phases, setPhases]           = useState<ProjectMilestone[]>([]);
+  const [phaseItems, setPhaseItems]   = useState<ProjectPhaseItem[]>([]);
   const [updates, setUpdates]         = useState<ProjectUpdate[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
 
   // join state
-  const [joining, setJoining]           = useState(false);
-  const [showJoinForm, setShowJoinForm] = useState(false);
-  const [joinAmount, setJoinAmount]     = useState("");
+  const [joining, setJoining]             = useState(false);
+  const [showJoinForm, setShowJoinForm]   = useState(false);
+  const [joinAmount, setJoinAmount]       = useState("");
   const [joinAmountError, setJoinAmountError] = useState("");
-  const [joinStatus, setJoinStatus]     = useState<"idle" | "pending" | "accepted" | "rejected">("idle");
+  const [joinStatus, setJoinStatus]       = useState<"idle" | "pending" | "accepted" | "rejected">("idle");
+  const [showChangeForm, setShowChangeForm] = useState(false);
+  const [changeAmount, setChangeAmount]   = useState("");
+  const [changeAmountError, setChangeAmountError] = useState("");
+  const [changing, setChanging]           = useState(false);
+
+  // remove participant state
+  const [confirmRemove, setConfirmRemove] = useState<Participant | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   // edit state
   const [showEdit, setShowEdit]         = useState(false);
@@ -91,25 +100,34 @@ export function ProjectDetailView() {
   const [editSuccess, setEditSuccess]   = useState(false);
   const [editError, setEditError]       = useState("");
 
+  // Fix 13: Include participants in main Promise.all
   useEffect(() => {
     Promise.all([
       api.projects.get(id),
-      api.projects.budgetItems.list(id),
       api.projects.milestones.list(id),
+      api.projects.phaseItems.list(id),
       api.projects.updates.list(id),
       api.users.me(),
+      api.projects.participants(id),
     ])
-      .then(([p, bi, ms, upd, me]) => {
+      .then(([p, ms, pi, upd, me, parts]) => {
         const proj = p as Project;
         setProject(proj);
-        setBudgetItems(bi as ProjectBudgetItem[]);
-        setMilestones(ms as ProjectMilestone[]);
+        setPhases(ms as ProjectMilestone[]);
+        setPhaseItems(pi as ProjectPhaseItem[]);
         setUpdates(upd as ProjectUpdate[]);
         const user = me as User;
         setCurrentUser(user);
-        api.projects.participants(id)
-          .then(data => setParticipants(data as Participant[]))
-          .catch(() => setParticipants([]));
+        const list = parts as Participant[];
+        setParticipants(list);
+        // Fix 3: also handle WITHDRAWN → show as rejected (no join button)
+        const mine = list.find(part => part.user_id === user.id);
+        if (mine) {
+          if (mine.status === "ACCEPTED")       { setJoinStatus("accepted"); setChangeAmount(mine.amount ? String(mine.amount) : ""); }
+          else if (mine.status === "PENDING")   setJoinStatus("pending");
+          else if (mine.status === "REJECTED")  setJoinStatus("rejected");
+          else if (mine.status === "WITHDRAWN") setJoinStatus("rejected");
+        }
       })
       .catch(() => router.push("/login"));
   }, [id, router]);
@@ -134,6 +152,38 @@ export function ProjectDetailView() {
       }
     } finally {
       setJoining(false);
+    }
+  }
+
+  async function handleChangeContribution() {
+    const amount = parseFloat(changeAmount);
+    if (isNaN(amount) || amount < 100) {
+      setChangeAmountError(t("joinAmountMin"));
+      return;
+    }
+    setChanging(true);
+    setChangeAmountError("");
+    try {
+      await api.projects.changeParticipation(id, { amount });
+      setShowChangeForm(false);
+    } catch {
+      setChangeAmountError(t("editError"));
+    } finally {
+      setChanging(false);
+    }
+  }
+
+  // Fix 9 + Fix 11: remove participant with confirmation and error handling
+  async function handleRemoveParticipant(participant: Participant) {
+    try {
+      await api.projects.removeParticipant(id, participant.interest_id);
+      setParticipants(prev => prev.filter(x => x.interest_id !== participant.interest_id));
+      setRemoveError(null);
+    } catch (err) {
+      console.error("Failed to remove participant", err);
+      setRemoveError(t("editError"));
+    } finally {
+      setConfirmRemove(null);
     }
   }
 
@@ -195,113 +245,21 @@ export function ProjectDetailView() {
           <Alert type="info" className="mb-4">{t("ownerChangeInfo")}</Alert>
         )}
 
-        <div className="flex gap-6">
+        {/* Fix 11: Confirm dialog for removing participant */}
+        {confirmRemove && (
+          <ConfirmDialog
+            title={t("detail.removeParticipant")}
+            message={confirmRemove.full_name || confirmRemove.email || ""}
+            confirmLabel={t("detail.removeParticipant")}
+            cancelLabel={locale === "ar" ? "إلغاء" : "Abbrechen"}
+            onConfirm={() => handleRemoveParticipant(confirmRemove)}
+            onCancel={() => setConfirmRemove(null)}
+          />
+        )}
 
-          {/* Teilnehmer-Sidebar */}
-          <aside style={{ width: "240px", flexShrink: 0 }}>
-              <div className="sticky top-4 rounded-card border border-line bg-surface px-4 py-4" style={{ boxShadow: "var(--sh-sm)", width: "380px", marginInlineStart: "-140px" }}>
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-sm font-bold text-[var(--clr-text)]">{t("detail.participants")}</h2>
-                  {participants.length > 0 && (
-                    <span className="rounded-pill bg-brand px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{participants.length}</span>
-                  )}
-                </div>
-                {participants.length === 0 ? (
-                  <p className="px-2 text-xs text-[var(--clr-text-3)]">{t("detail.noParticipants")}</p>
-                ) : (() => {
-                  const accepted = participants.filter(p => p.status === "ACCEPTED");
-                  const pending  = participants.filter(p => p.status !== "ACCEPTED");
-                  return (
-                    <div className="flex flex-col gap-3">
-                      {accepted.length > 0 && (
-                        <div>
-                          <div className="mb-1.5 flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                            <span className="text-[11px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
-                              {t("detail.statusAccepted")} · {accepted.length}
-                            </span>
-                          </div>
-                          <ul className="flex flex-col gap-1">
-                            {accepted.map((p) => (
-                              <li key={p.interest_id} className="rounded-lg border border-emerald-200/60 bg-emerald-50 px-3 py-2 dark:border-emerald-800/30 dark:bg-emerald-900/20">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-semibold text-emerald-800 dark:text-emerald-300">
-                                      {p.full_name || p.email}
-                                    </p>
-                                    {p.country && (
-                                      <p className="truncate text-xs text-emerald-600/70 dark:text-emerald-400/60">{p.country}</p>
-                                    )}
-                                    {p.amount && (
-                                      <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                                        {formatMoney(p.amount, project.currency)}
-                                      </p>
-                                    )}
-                                  </div>
-                                  {isOwner && (
-                                    <Tooltip text={tt("removeParticipant")} side="right">
-                                      <button
-                                        onClick={async () => {
-                                          await api.projects.removeParticipant(id, p.interest_id);
-                                          setParticipants(prev => prev.filter(x => x.interest_id !== p.interest_id));
-                                        }}
-                                        className="shrink-0 text-xs text-red-400 hover:text-red-600 hover:underline"
-                                      >
-                                        {t("detail.removeParticipant")}
-                                      </button>
-                                    </Tooltip>
-                                  )}
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {pending.length > 0 && (
-                        <div>
-                          <div className="mb-1.5 flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-amber-400" />
-                            <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
-                              {t("detail.statusPending")} · {pending.length}
-                            </span>
-                          </div>
-                          <ul className="flex flex-col gap-1">
-                            {pending.map((p) => (
-                              <li key={p.interest_id} className="rounded-lg border border-amber-200/60 bg-amber-50 px-3 py-2 dark:border-amber-800/30 dark:bg-amber-900/20">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-semibold text-amber-800 dark:text-amber-300">
-                                      {p.full_name || p.email}
-                                    </p>
-                                    {p.country && (
-                                      <p className="truncate text-xs text-amber-600/70 dark:text-amber-400/60">{p.country}</p>
-                                    )}
-                                  </div>
-                                  {isOwner && (
-                                    <Tooltip text={tt("removeParticipant")} side="right">
-                                      <button
-                                        onClick={async () => {
-                                          await api.projects.removeParticipant(id, p.interest_id);
-                                          setParticipants(prev => prev.filter(x => x.interest_id !== p.interest_id));
-                                        }}
-                                        className="shrink-0 text-xs text-red-400 hover:text-red-600 hover:underline"
-                                      >
-                                        {t("detail.removeParticipant")}
-                                      </button>
-                                    </Tooltip>
-                                  )}
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-            </aside>
+        {/* Fix 10: Responsive layout — main content first in DOM (shows first on mobile),
+            sidebar uses lg:order-first to appear left on desktop */}
+        <div className="flex flex-col gap-6 lg:flex-row">
 
           {/* Main Content */}
           <div className="min-w-0 flex-1">
@@ -328,10 +286,54 @@ export function ProjectDetailView() {
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-sm font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
                       {"⏳"} {t("joinPending")}
                     </span>
-                  ) : joinStatus === "accepted" ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1.5 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                      {"✓"} {t("joinApproved")}
+                  ) : joinStatus === "rejected" ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1.5 text-sm font-medium text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                      {"✕"} {t("joinRejected")}
                     </span>
+                  ) : joinStatus === "accepted" ? (
+                    <div className="flex flex-col gap-2">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1.5 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                        {"✓"} {t("joinApproved")}
+                      </span>
+                      {showChangeForm ? (
+                        <div className="flex flex-col gap-2 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface-2)] p-4">
+                          <label className="text-sm font-medium text-[var(--clr-text)]">{t("changeContributionAmount")}</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="number"
+                              min="100"
+                              value={changeAmount}
+                              onChange={e => { setChangeAmount(e.target.value); setChangeAmountError(""); }}
+                              placeholder={t("joinAmountPlaceholder")}
+                              className="flex-1 rounded-lg border border-[var(--clr-line)] bg-[var(--clr-bg)] px-3 py-2 text-sm outline-none focus:border-[var(--clr-brand)]"
+                            />
+                            <button
+                              onClick={handleChangeContribution}
+                              disabled={changing}
+                              className="rounded-lg bg-[var(--clr-brand)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                            >
+                              {changing ? t("changing") : t("changeContribution")}
+                            </button>
+                            <Tooltip text={tt("cancelJoin")} side="top">
+                              <button
+                                onClick={() => setShowChangeForm(false)}
+                                className="rounded-lg border border-[var(--clr-line)] px-3 py-2 text-sm text-[var(--clr-text-2)] hover:bg-[var(--clr-surface-2)]"
+                              >
+                                {"✕"}
+                              </button>
+                            </Tooltip>
+                          </div>
+                          {changeAmountError && <p className="text-xs text-red-500">{changeAmountError}</p>}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setShowChangeForm(true)}
+                          className="w-fit rounded-lg border border-[var(--clr-brand)] px-4 py-2 text-sm font-semibold text-[var(--clr-brand)] transition hover:bg-[var(--clr-brand)] hover:text-white"
+                        >
+                          {t("changeContribution")}
+                        </button>
+                      )}
+                    </div>
                   ) : showJoinForm ? (
                     <div className="flex flex-col gap-2 rounded-xl border border-[var(--clr-line)] bg-[var(--clr-surface-2)] p-4">
                       <label className="text-sm font-medium text-[var(--clr-text)]">
@@ -525,46 +527,41 @@ export function ProjectDetailView() {
           <p className="whitespace-pre-wrap text-sm text-[var(--clr-text-2)]">{project.description}</p>
         </Card>
 
-        {/* Budgetpositionen */}
-        {budgetItems.length > 0 && (
+        {/* Phasen */}
+        {phases.length > 0 && (
           <Card className="mt-6 p-6">
-            <h2 className="mb-4 font-display text-base font-semibold text-[var(--clr-text)]">{t("detail.budgetItems")}</h2>
-            <div className="flex flex-col gap-2">
-              {budgetItems.map((item) => (
-                <div key={item.id} className="flex justify-between rounded-lg bg-surface-2 px-4 py-3">
-                  <div>
-                    <span className="font-medium text-[var(--clr-text)]">{item.title}</span>
-                    {item.is_required && <span className="ms-2 text-xs text-[var(--clr-text-3)]">{t("detail.required")}</span>}
+            <h2 className="mb-4 font-display text-base font-semibold text-[var(--clr-text)]">{t("detail.phases")}</h2>
+            <div className="flex flex-col gap-4">
+              {phases.map((phase, i) => {
+                const items = phaseItems.filter((pi) => pi.milestone_id === phase.id);
+                const phaseTotal = items.reduce((s, it) => s + Number(it.amount), 0);
+                return (
+                  <div key={phase.id} className="rounded-lg border border-line p-4">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-bold text-brand">
+                        {i + 1}
+                      </span>
+                      <p className="font-semibold text-[var(--clr-text)]">{phase.title}</p>
+                    </div>
+                    {items.length > 0 && (
+                      <div className="flex flex-col gap-1.5">
+                        {items.map((it) => (
+                          <div key={it.id} className="flex justify-between rounded bg-surface-2 px-3 py-2 text-sm">
+                            <span className="text-[var(--clr-text-2)]">{it.title}</span>
+                            {/* Fix 1: use project.currency instead of hardcoded "EUR" */}
+                            <span className="font-medium text-brand">{formatMoney(it.amount, project.currency)}</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-between border-t border-line pt-1.5 text-sm">
+                          <span className="font-medium text-[var(--clr-text)]">{t("detail.phaseTotal")}</span>
+                          {/* Fix 1: use project.currency instead of hardcoded "EUR" */}
+                          <span className="font-bold text-[var(--clr-text)]">{formatMoney(phaseTotal, project.currency)}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <span className="font-semibold text-brand">{formatMoney(item.amount, item.currency)}</span>
-                </div>
-              ))}
-              <div className="flex justify-between border-t border-line pt-2">
-                <span className="font-medium text-[var(--clr-text)]">{t("detail.total")}</span>
-                <span className="font-bold text-[var(--clr-text)]">
-                  {formatMoney(budgetItems.reduce((s, i) => s + Number(i.amount), 0), budgetItems[0]?.currency)}
-                </span>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* Meilensteine */}
-        {milestones.length > 0 && (
-          <Card className="mt-6 p-6">
-            <h2 className="mb-4 font-display text-base font-semibold text-[var(--clr-text)]">{t("detail.milestones")}</h2>
-            <div className="flex flex-col gap-2">
-              {milestones.map((ms, i) => (
-                <div key={ms.id} className="flex items-start gap-3 rounded-lg bg-surface-2 px-4 py-3">
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-bold text-brand">
-                    {i + 1}
-                  </span>
-                  <div>
-                    <p className="font-medium text-[var(--clr-text)]">{ms.title}</p>
-                    <p className="text-xs text-[var(--clr-text-3)]">{t(`milestoneStatus.${ms.status}` as Parameters<typeof t>[0])}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         )}
@@ -618,6 +615,135 @@ export function ProjectDetailView() {
         )}
 
           </div> {/* end main content */}
+
+          {/* Fix 10: Sidebar — uses lg:order-first so it appears left on desktop, but below main on mobile */}
+          <aside className="w-full lg:w-[312px] lg:shrink-0 lg:order-first">
+            <div className="sticky top-4 flex flex-col gap-4 w-full">
+
+              {/* Fix 9: Remove error display */}
+              {removeError && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600 dark:border-red-800/30 dark:bg-red-900/20 dark:text-red-400">
+                  {removeError}
+                </div>
+              )}
+
+              {/* Projektersteller */}
+              <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--clr-brand)] to-[var(--clr-brand-mid,#1a7a5e)] text-white" style={{ boxShadow: "0 4px 16px 0 rgb(0 0 0 / 0.15)" }}>
+                <div className="px-4 pt-4 pb-3">
+                  <p className="mb-2.5 text-[10px] font-bold uppercase tracking-widest text-white/60">{t("detail.projectCreator")}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold text-white ring-2 ring-white/30">
+                      {(project.creator_name || "?").slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-white">{project.creator_name || "—"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mitglieder (accepted) */}
+              {(() => {
+                const accepted = participants.filter(p => p.status === "ACCEPTED");
+                if (accepted.length === 0) return null;
+                return (
+                  <div className="overflow-hidden rounded-2xl border border-emerald-200/70 bg-gradient-to-b from-emerald-50 to-white dark:border-emerald-800/30 dark:from-emerald-900/20 dark:to-[var(--clr-surface)]" style={{ boxShadow: "0 2px 12px 0 rgb(16 185 129 / 0.10)" }}>
+                    <div className="flex items-center justify-between border-b border-emerald-100/80 px-4 py-3 dark:border-emerald-800/20">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">{accepted.length}</span>
+                        <span className="text-xs font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">{t("detail.statusAccepted")}</span>
+                      </div>
+                    </div>
+                    <ul className="flex flex-col divide-y divide-emerald-100/60 dark:divide-emerald-800/20">
+                      {accepted.map((p) => {
+                        const initials = (p.full_name || p.email || "?").slice(0, 2).toUpperCase();
+                        return (
+                          <li key={p.interest_id} className="flex items-center gap-3 px-4 py-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-sm font-bold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
+                              {initials}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs font-semibold text-[var(--clr-text)]">{p.full_name || p.email || "—"}</p>
+                              {p.country && <p className="truncate text-[10px] text-[var(--clr-text-3)]">{p.country}</p>}
+                              {p.amount && (
+                                <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(p.amount, project.currency)}</p>
+                              )}
+                            </div>
+                            {/* Fix 11+12: confirmation dialog + aria-label */}
+                            {isOwner && (
+                              <Tooltip text={tt("removeParticipant")} side="left">
+                                <button
+                                  onClick={() => setConfirmRemove(p)}
+                                  aria-label={t("detail.removeParticipant")}
+                                  className="shrink-0 rounded-full p-1 text-[var(--clr-text-3)] transition hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30"
+                                >
+                                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                              </Tooltip>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              })()}
+
+              {/* Andere Teilnehmer (pending / rest) */}
+              {(() => {
+                const pending = participants.filter(p => p.status !== "ACCEPTED");
+                if (pending.length === 0 && participants.length === 0) {
+                  return (
+                    <div className="rounded-2xl border border-[var(--clr-line)] bg-[var(--clr-surface)] px-4 py-5 text-center" style={{ boxShadow: "var(--sh-sm)" }}>
+                      <p className="text-xs text-[var(--clr-text-3)]">{t("detail.noParticipants")}</p>
+                    </div>
+                  );
+                }
+                if (pending.length === 0) return null;
+                return (
+                  <div className="overflow-hidden rounded-2xl border border-[var(--clr-line)] bg-[var(--clr-surface)]" style={{ boxShadow: "var(--sh-sm)" }}>
+                    <div className="flex items-center justify-between border-b border-[var(--clr-line)] px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/20 text-[10px] font-bold text-amber-600 dark:text-amber-400">{pending.length}</span>
+                        <span className="text-xs font-bold uppercase tracking-wide text-[var(--clr-text-2)]">{t("detail.statusPending")}</span>
+                      </div>
+                    </div>
+                    <ul className="flex flex-col divide-y divide-[var(--clr-line)]">
+                      {pending.map((p) => {
+                        const initials = (p.full_name || p.email || "?").slice(0, 2).toUpperCase();
+                        return (
+                          <li key={p.interest_id} className="flex items-center gap-3 px-4 py-2.5">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--clr-surface-2)] text-xs font-bold text-[var(--clr-text-2)]">
+                              {initials}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs text-[var(--clr-text)]">{p.full_name || p.email || "—"}</p>
+                              {p.country && <p className="truncate text-[10px] text-[var(--clr-text-3)]">{p.country}</p>}
+                              {p.amount && <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400">{formatMoney(p.amount, project.currency)}</p>}
+                            </div>
+                            {/* Fix 11+12: confirmation dialog + aria-label */}
+                            {isOwner && (
+                              <Tooltip text={tt("removeParticipant")} side="left">
+                                <button
+                                  onClick={() => setConfirmRemove(p)}
+                                  aria-label={t("detail.removeParticipant")}
+                                  className="shrink-0 rounded-full p-1 text-[var(--clr-text-3)] transition hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30"
+                                >
+                                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                              </Tooltip>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              })()}
+
+            </div>
+          </aside>
+
         </div> {/* end flex gap-6 */}
 
       </div>

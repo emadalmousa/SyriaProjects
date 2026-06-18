@@ -75,7 +75,7 @@ def update_user_role(
 def list_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="Only admins can list users")
-    return db.query(User).filter(User.global_role != GlobalRole.SUPERADMIN).all()
+    return db.query(User).filter(User.global_role != GlobalRole.SUPERADMIN).limit(500).all()
 
 
 @router.get("/me/interests")
