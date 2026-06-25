@@ -219,34 +219,58 @@ export function ProfileForm() {
           <Card className="mx-auto max-w-lg p-8" style={{ boxShadow: "var(--sh-md)" }}>
 
             {/* Avatar + info */}
-            <div className="mb-8 flex items-center gap-4">
+            <div className="mb-6 flex items-center gap-4">
               <Avatar user={user} size="lg" />
               <div className="flex-1">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-[var(--clr-text)]">
-                      {[user.first_name, user.last_name].filter(Boolean).join(" ") || "—"}
-                    </p>
-                    <p className="text-sm text-[var(--clr-text-2)]">{user.email}</p>
-                    <span className="mt-1 inline-block rounded-lg border border-line bg-surface-2 px-2.5 py-0.5 text-xs font-semibold text-[var(--clr-text-2)]">
-                      {user.global_role}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-medium text-[var(--clr-text-2)] uppercase tracking-wide">{t("investmentBalance")}</p>
-                    {(user.investment_balances ?? []).length === 0 ? (
-                      <p className="mt-0.5 text-lg font-bold text-[var(--clr-brand)]">0,00 €</p>
-                    ) : (
-                      <div className="mt-0.5 flex flex-col items-end gap-0.5">
-                        {(user.investment_balances ?? []).map(b => (
-                          <p key={b.currency} className="text-lg font-bold text-[var(--clr-brand)] leading-tight">
-                            {formatMoney(b.amount, b.currency)}
-                          </p>
-                        ))}
+                <p className="font-semibold text-[var(--clr-text)]">
+                  {[user.first_name, user.last_name].filter(Boolean).join(" ") || "—"}
+                </p>
+                <p className="text-sm text-[var(--clr-text-2)]">{user.email}</p>
+                <span className="mt-1 inline-block rounded-lg border border-line bg-surface-2 px-2.5 py-0.5 text-xs font-semibold text-[var(--clr-text-2)]">
+                  {user.global_role}
+                </span>
+              </div>
+            </div>
+
+            {/* Investment Guthaben – Currency Cards */}
+            <div className="mb-8 rounded-2xl border border-line bg-surface-2 p-4">
+              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--clr-text-2)]">
+                {t("investmentBalance")}
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { code: "EUR", symbol: "€", label: "Euro",          flag: "🇪🇺", accent: "#3b82f6" },
+                  { code: "USD", symbol: "$", label: "US-Dollar",      flag: "🇺🇸", accent: "#10b981" },
+                  { code: "SYP", symbol: "ل.س", label: "Syr. Pfund",  flag: "🇸🇾", accent: "#f59e0b" },
+                ] as const).map(({ code, symbol, label, flag, accent }) => {
+                  const bal = (user.investment_balances ?? []).find(b => b.currency === code);
+                  const amount = bal?.amount ?? 0;
+                  const pending = pendingBalanceCurrencies.has(code);
+                  return (
+                    <div
+                      key={code}
+                      className="relative flex flex-col overflow-hidden rounded-xl p-3"
+                      style={{ borderLeft: `3px solid ${accent}`, background: `${accent}0d` }}
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-base leading-none">{flag}</span>
+                        {pending && (
+                          <span
+                            className="rounded-full px-1.5 py-0.5 text-[9px] font-bold leading-none"
+                            style={{ background: "#f59e0b22", color: "#b45309" }}
+                            title={t("balanceRequestPending")}
+                          >⏳</span>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: accent }}>{code}</p>
+                      <p className="truncate text-[10px] text-[var(--clr-text-2)]">{label}</p>
+                      <p className="mt-1.5 text-base font-bold leading-tight text-[var(--clr-text)]">
+                        {amount.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span className="ml-0.5 text-[10px] font-semibold" style={{ color: accent }}>{symbol}</span>
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -297,18 +321,7 @@ export function ProfileForm() {
 
             {/* Balance change request */}
             <div className="mt-6 border-t border-line pt-6">
-              <div className="flex items-center justify-between gap-3">
-                {pendingBalanceCurrencies.size > 0 ? (
-                  <div className="flex flex-wrap gap-1">
-                    {Array.from(pendingBalanceCurrencies).map(cur => (
-                      <span key={cur} className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                        {t("balanceRequestPending")} ({cur})
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <span />
-                )}
+              <div className="flex items-center justify-end">
                 <Button variant="secondary" size="sm" onClick={() => { setShowBalanceForm(v => !v); setBalanceResult(null); }}>
                   {t("balanceRequestBtn")}
                 </Button>
