@@ -109,6 +109,18 @@ export function ManagementView() {
 
   const selectCls = "rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-[var(--clr-text)] outline-none transition focus:border-brand dark:bg-surface";
 
+  const filterCls = (active: boolean) => `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition border ${active ? "bg-[var(--clr-brand)] text-white border-[var(--clr-brand)]" : "border-[var(--clr-line)] text-[var(--clr-text-2)] hover:text-[var(--clr-text)] bg-[var(--clr-surface)]"}`;
+  const kindLabel = (kind: string) =>
+    kind === "project" ? t("filterProjects") :
+    kind === "join" ? t("filterJoin") :
+    kind === "balance" ? t("filterBalance") :
+    t("filterOther");
+  const kindColor = (kind: string) =>
+    kind === "project" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
+    kind === "join" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" :
+    kind === "balance" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
+    "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+
   if (loading || !me) return <PageSpinner />;
 
   const taskCount = tasks
@@ -217,7 +229,6 @@ export function ManagementView() {
                 else rows.push({ kind: "other", id: r.id, user: r.requester_name || "—", title: tProject(`requestTypeLabel.${r.type}`), detail, date: r.created_at, projectId: r.project_id });
               });
 
-              const filterCls = (active: boolean) => `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition border ${active ? "bg-[var(--clr-brand)] text-white border-[var(--clr-brand)]" : "border-[var(--clr-line)] text-[var(--clr-text-2)] hover:text-[var(--clr-text)] bg-[var(--clr-surface)]"}`;
               const counts = { all: rows.length, projects: rows.filter(r => r.kind === "project").length, join: rows.filter(r => r.kind === "join").length, balance: rows.filter(r => r.kind === "balance").length, other: rows.filter(r => r.kind === "other").length } as Record<string, number>;
               const filtered = tasksFilter === "all" ? rows : rows.filter(r => r.kind === (tasksFilter === "projects" ? "project" : tasksFilter));
 
@@ -246,7 +257,7 @@ export function ManagementView() {
                             <tr>
                               <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colType")}</th>
                               <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colUser")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colSubject")}</th>
                               <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colAmount")}</th>
                               <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colRegistered")}</th>
                               <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colActions")}</th>
@@ -254,28 +265,18 @@ export function ManagementView() {
                           </thead>
                           <tbody className="divide-y divide-line">
                             {filtered.map(row => {
-                              const kindLabel =
-                                row.kind === "project" ? t("filterProjects") :
-                                row.kind === "join" ? t("filterJoin") :
-                                row.kind === "balance" ? t("filterBalance") :
-                                t("filterOther");
-                              const kindColor =
-                                row.kind === "project" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
-                                row.kind === "join" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" :
-                                row.kind === "balance" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                                "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
                               const projectId = row.kind === "project" ? row.id : row.kind === "join" ? row.projectId : row.kind === "other" ? row.projectId : undefined;
                               return (
                                 <tr key={`${row.kind}-${row.id}`} onClick={() => projectId && router.push(`/projects/${projectId}`)} className={`hover:bg-surface-2 transition-colors ${projectId ? "cursor-pointer" : ""}`}>
                                   <td className="px-4 py-3">
-                                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${kindColor}`}>{kindLabel}</span>
+                                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${kindColor(row.kind)}`}>{kindLabel(row.kind)}</span>
                                   </td>
                                   <td className="px-4 py-3">
                                     <p className="font-medium text-[var(--clr-text)]">{row.user}</p>
                                     {row.kind === "join" && <p className="text-xs text-[var(--clr-text-2)]">{row.email}</p>}
                                   </td>
                                   <td className="px-4 py-3">
-                                    <p className="font-medium text-[var(--clr-text)]">{row.title}</p>
+                                    <p className="font-medium text-[var(--clr-text)]">{row.kind === "balance" ? "—" : row.title}</p>
                                     {row.kind === "project" && row.subtitle && <p className="text-xs text-[var(--clr-text-2)] line-clamp-1">{row.subtitle}</p>}
                                     {row.kind === "project" && row.city && <p className="text-xs text-[var(--clr-text-3)]">{row.city}</p>}
                                   </td>
@@ -341,7 +342,6 @@ export function ManagementView() {
                 else hrows.push({ kind: "other", id: r.id, user: r.requester_name || "—", title: tProject(`requestTypeLabel.${r.type}`), detail, result: ok ? t("resultApproved") : t("resultRejected"), resultOk: ok, date: r.decided_at, note: r.admin_note, projectId: r.project_id });
               });
 
-              const filterCls = (active: boolean) => `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition border ${active ? "bg-[var(--clr-brand)] text-white border-[var(--clr-brand)]" : "border-[var(--clr-line)] text-[var(--clr-text-2)] hover:text-[var(--clr-text)] bg-[var(--clr-surface)]"}`;
               const counts = { all: hrows.length, projects: hrows.filter(r => r.kind === "project").length, join: hrows.filter(r => r.kind === "join").length, balance: hrows.filter(r => r.kind === "balance").length, other: hrows.filter(r => r.kind === "other").length } as Record<string, number>;
               const filtered = historyFilter === "all" ? hrows : hrows.filter(r => r.kind === (historyFilter === "projects" ? "project" : historyFilter));
 
@@ -370,7 +370,7 @@ export function ManagementView() {
                             <tr>
                               <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colType")}</th>
                               <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colRequester")}</th>
-                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colProject")}</th>
+                              <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colSubject")}</th>
                               <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colAmount")}</th>
                               <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colResult")}</th>
                               <th className="px-4 py-3 text-start font-semibold text-[var(--clr-text-2)]">{t("colDecidedAt")}</th>
@@ -379,21 +379,11 @@ export function ManagementView() {
                           </thead>
                           <tbody className="divide-y divide-line">
                             {filtered.map(row => {
-                              const kindLabel =
-                                row.kind === "project" ? t("filterProjects") :
-                                row.kind === "join" ? t("filterJoin") :
-                                row.kind === "balance" ? t("filterBalance") :
-                                t("filterOther");
-                              const kindColor =
-                                row.kind === "project" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
-                                row.kind === "join" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" :
-                                row.kind === "balance" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                                "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
                               const projectId = row.kind === "project" ? row.id : row.kind === "join" ? row.projectId : row.kind === "other" ? row.projectId : undefined;
                               return (
                                 <tr key={`h-${row.kind}-${row.id}`} onClick={() => projectId && router.push(`/projects/${projectId}`)} className={`hover:bg-surface-2 transition-colors ${projectId ? "cursor-pointer" : ""}`}>
                                   <td className="px-4 py-3">
-                                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${kindColor}`}>{kindLabel}</span>
+                                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${kindColor(row.kind)}`}>{kindLabel(row.kind)}</span>
                                     {row.kind !== "project" && row.kind !== "join" && (row as { note?: string }).note && <p className="mt-0.5 text-xs text-red-500">{(row as { note?: string }).note}</p>}
                                   </td>
                                   <td className="px-4 py-3">
@@ -401,7 +391,7 @@ export function ManagementView() {
                                     {row.kind === "join" && <p className="text-xs text-[var(--clr-text-2)]">{row.email}</p>}
                                   </td>
                                   <td className="px-4 py-3">
-                                    <p className="text-[var(--clr-text-2)]">{row.title}</p>
+                                    <p className="text-[var(--clr-text-2)]">{row.kind === "balance" ? "—" : row.title}</p>
                                     {row.kind === "project" && row.city && <p className="text-xs text-[var(--clr-text-3)]">{row.city}</p>}
                                   </td>
                                   <td className="px-4 py-3 text-xs font-semibold text-[var(--clr-brand)]">{row.detail}</td>

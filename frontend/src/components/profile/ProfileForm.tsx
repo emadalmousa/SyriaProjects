@@ -112,12 +112,13 @@ export function ProfileForm() {
     setLoading(true);
     try {
       const updated = await api.users.updateProfile(form) as User;
-      setUser(updated);
       const saved = { first_name: updated.first_name || "", last_name: updated.last_name || "", phone: updated.phone || "", country: updated.country || "" };
       setSavedForm(saved);
       setForm(saved);
       setSuccess(true);
       setEditing(false);
+      // Merge only profile fields into existing user state (balance fields stay intact)
+      setUser(prev => prev ? { ...prev, ...saved } : prev);
     }
     catch (err: unknown) { setError(err instanceof Error ? err.message : "Error"); }
     finally { setLoading(false); }
@@ -333,7 +334,7 @@ export function ProfileForm() {
                     <option value="SYP">SYP – Syrisches Pfund</option>
                   </SelectField>
                   <InputField
-                    label={t("balanceRequestAmount")}
+                    label={`${t("balanceRequestAmount")} (${balanceCurrency})`}
                     type="number"
                     min="0.01"
                     step="0.01"
@@ -362,7 +363,7 @@ export function ProfileForm() {
                     >
                       {t("balanceRequestSubmit")}
                     </Button>
-                    <Button type="button" variant="secondary" onClick={() => setShowBalanceForm(false)} disabled={balanceLoading} className="flex-1">
+                    <Button type="button" variant="secondary" onClick={() => { setShowBalanceForm(false); setBalanceResult(null); }} disabled={balanceLoading} className="flex-1">
                       {t("cancel")}
                     </Button>
                   </div>

@@ -27,7 +27,7 @@
   "balanceRequestBtn": "طلب تغيير الرصيد",
   "balanceRequestTitle": "طلب تغيير الرصيد",
   "balanceRequestCurrency": "العملة",
-  "balanceRequestAmount": "المبلغ المراد إضافته (€)",
+  "balanceRequestAmount": "المبلغ المراد إضافته",
   "balanceRequestNote": "الملاحظة (اختياري)",
   "balanceRequestSubmit": "إرسال الطلب",
   "balanceRequestSent": "تم تقديم الطلب – في انتظار مراجعة المسؤول.",

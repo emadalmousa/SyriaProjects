@@ -27,7 +27,7 @@
   "balanceRequestBtn": "Request balance change",
   "balanceRequestTitle": "Request balance change",
   "balanceRequestCurrency": "Currency",
-  "balanceRequestAmount": "Amount to add (€)",
+  "balanceRequestAmount": "Amount to add",
   "balanceRequestNote": "Reason (optional)",
   "balanceRequestSubmit": "Send request",
   "balanceRequestSent": "Request submitted – awaiting admin review.",

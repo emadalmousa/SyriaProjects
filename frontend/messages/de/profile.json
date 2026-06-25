@@ -27,7 +27,7 @@
   "balanceRequestBtn": "Guthabenänderung beantragen",
   "balanceRequestTitle": "Guthabenänderung beantragen",
   "balanceRequestCurrency": "Währung",
-  "balanceRequestAmount": "Betrag hinzufügen (€)",
+  "balanceRequestAmount": "Betrag hinzufügen",
   "balanceRequestNote": "Begründung (optional)",
   "balanceRequestSubmit": "Anfrage senden",
   "balanceRequestSent": "Anfrage eingereicht – wird vom Admin geprüft.",

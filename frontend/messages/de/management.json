@@ -46,6 +46,7 @@
   "colDecidedAt": "Entschieden am",
   "colRequester": "Antragsteller",
   "colProject": "Projekt",
+  "colSubject": "Betreff",
   "colAmount": "Betrag",
   "colResult": "Ergebnis",
   "reopen": "Wieder öffnen",
@@ -54,5 +55,14 @@
   "historyInterests": "Beitrittsanfrage",
   "historyRequests": "Bearbeitete Anträge",
   "resultApproved": "Genehmigt",
-  "resultRejected": "Abgelehnt"
+  "resultRejected": "Abgelehnt",
+  "colBalance": "Guthaben",
+  "colNewBalance": "Neues Guthaben",
+  "filterAll": "Alle",
+  "filterProjects": "Projekte",
+  "filterJoin": "Beitritt",
+  "filterBalance": "Guthaben",
+  "filterOther": "Sonstige",
+  "noTasks": "Keine offenen Aufgaben",
+  "noHistoryItems": "Keine Einträge"
 }

@@ -46,6 +46,7 @@
   "colDecidedAt": "Decided on",
   "colRequester": "Requester",
   "colProject": "Project",
+  "colSubject": "Subject",
   "colAmount": "Amount",
   "colResult": "Result",
   "reopen": "Reopen",
@@ -54,5 +55,14 @@
   "historyInterests": "Join request",
   "historyRequests": "Reviewed requests",
   "resultApproved": "Approved",
-  "resultRejected": "Rejected"
+  "resultRejected": "Rejected",
+  "colBalance": "Balance",
+  "colNewBalance": "New balance",
+  "filterAll": "All",
+  "filterProjects": "Projects",
+  "filterJoin": "Join requests",
+  "filterBalance": "Balance",
+  "filterOther": "Other",
+  "noTasks": "No open tasks",
+  "noHistoryItems": "No entries"
 }

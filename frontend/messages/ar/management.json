@@ -46,6 +46,7 @@
   "colDecidedAt": "تاريخ القرار",
   "colRequester": "مقدّم الطلب",
   "colProject": "المشروع",
+  "colSubject": "الموضوع",
   "colAmount": "المبلغ",
   "colResult": "النتيجة",
   "reopen": "إعادة فتح",
@@ -54,5 +55,14 @@
   "historyInterests": "طلب الانضمام",
   "historyRequests": "الطلبات المعالجة",
   "resultApproved": "مقبول",
-  "resultRejected": "مرفوض"
+  "resultRejected": "مرفوض",
+  "colBalance": "الرصيد",
+  "colNewBalance": "الرصيد الجديد",
+  "filterAll": "الكل",
+  "filterProjects": "المشاريع",
+  "filterJoin": "طلبات الانضمام",
+  "filterBalance": "الرصيد",
+  "filterOther": "أخرى",
+  "noTasks": "لا توجد مهام مفتوحة",
+  "noHistoryItems": "لا توجد إدخالات"
 }
