@@ -22,5 +22,15 @@
   "tabJoined": "My Participations",
   "newProject": "+ New",
   "noProjects": "No projects yet",
-  "createFirst": "Create first project →"
+  "createFirst": "Create first project →",
+  "investmentBalance": "Investment Balance",
+  "balanceRequestBtn": "Request balance change",
+  "balanceRequestTitle": "Request balance change",
+  "balanceRequestCurrency": "Currency",
+  "balanceRequestAmount": "Amount to add (€)",
+  "balanceRequestNote": "Reason (optional)",
+  "balanceRequestSubmit": "Send request",
+  "balanceRequestSent": "Request submitted – awaiting admin review.",
+  "balanceRequestPending": "Request pending",
+  "balanceRequestError": "Failed to submit request"
 }

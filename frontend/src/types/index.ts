@@ -44,6 +44,7 @@ export interface User {
   avatar_url: string | null;
   global_role: GlobalRole;
   is_active: boolean;
+  investment_balances: { currency: string; amount: number }[];
   created_at: string | null;
 }
 
@@ -194,7 +195,8 @@ export type RequestType =
   | "CHANGE_PARTICIPATION"
   | "WITHDRAW_PARTICIPATION"
   | "CHANGE_PROJECT_DATA"
-  | "CHANGE_PROJECT_STATUS";
+  | "CHANGE_PROJECT_STATUS"
+  | "CHANGE_BALANCE";
 
 export type RequestStatus = "PENDING" | "ACCEPTED" | "REJECTED";
 

@@ -22,5 +22,15 @@
   "tabJoined": "مشاركاتي في المشاريع",
   "newProject": "+ جديد",
   "noProjects": "لا توجد مشاريع بعد",
-  "createFirst": "أنشئ مشروعك الأول ←"
+  "createFirst": "أنشئ مشروعك الأول ←",
+  "investmentBalance": "رصيد الاستثمار",
+  "balanceRequestBtn": "طلب تغيير الرصيد",
+  "balanceRequestTitle": "طلب تغيير الرصيد",
+  "balanceRequestCurrency": "العملة",
+  "balanceRequestAmount": "المبلغ المراد إضافته (€)",
+  "balanceRequestNote": "الملاحظة (اختياري)",
+  "balanceRequestSubmit": "إرسال الطلب",
+  "balanceRequestSent": "تم تقديم الطلب – في انتظار مراجعة المسؤول.",
+  "balanceRequestPending": "الطلب قيد الانتظار",
+  "balanceRequestError": "فشل إرسال الطلب"
 }

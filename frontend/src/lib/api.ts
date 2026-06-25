@@ -49,6 +49,8 @@ export const api = {
       request(`/users/${userId}/active`, { method: "PATCH" }),
     myInterests: () => request("/users/me/interests"),
     myRequests: () => request("/users/me/requests"),
+    requestBalanceChange: (amount: number, currency: string, note?: string) =>
+      request("/users/me/balance-request", { method: "POST", body: JSON.stringify({ amount, currency, note }) }),
   },
   admin: {
     testDataStatus: () => request<{ exists: boolean; users: number; projects: number }>("/admin/test-data/status"),

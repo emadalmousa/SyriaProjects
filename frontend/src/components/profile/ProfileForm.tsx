@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
+import { formatMoney } from "@/lib/format";
 import type { User, Project, UserInterest, AdminRequest } from "@/types";
 import { Alert, Button, Avatar, PageSpinner, Tooltip } from "@/components/ui";
 import { InputField, SelectField } from "@/components/ui";
@@ -44,6 +45,20 @@ export function ProfileForm() {
   const [changeAmount, setChangeAmount] = useState("");
   const [activeTab, setActiveTab] = useState<"projects" | "participations">("projects");
   const [mainTab, setMainTab] = useState<"profile" | "projects">("profile");
+
+  // Balance request state
+  const [showBalanceForm, setShowBalanceForm] = useState(false);
+  const [balanceAmount, setBalanceAmount] = useState("");
+  const [balanceCurrency, setBalanceCurrency] = useState("EUR");
+  const [balanceNote, setBalanceNote] = useState("");
+  const [balanceLoading, setBalanceLoading] = useState(false);
+  const [balanceResult, setBalanceResult] = useState<"sent" | "error" | null>(null);
+  const pendingBalanceCurrencies = new Set(
+    requests
+      .filter(r => r.type === "CHANGE_BALANCE" && r.status === "PENDING")
+      .map(r => { try { return JSON.parse(r.payload || "{}").currency; } catch { return null; } })
+      .filter(Boolean)
+  );
 
   useEffect(() => {
     api.users.me()
@@ -126,6 +141,26 @@ export function ProfileForm() {
     }
   }
 
+  async function handleBalanceRequest() {
+    const amount = parseFloat(balanceAmount);
+    if (isNaN(amount) || amount <= 0) return;
+    setBalanceLoading(true);
+    setBalanceResult(null);
+    try {
+      await api.users.requestBalanceChange(amount, balanceCurrency, balanceNote || undefined);
+      setBalanceResult("sent");
+      setShowBalanceForm(false);
+      setBalanceAmount("");
+      setBalanceCurrency("EUR");
+      setBalanceNote("");
+      api.users.myRequests().then((data) => setRequests(data as AdminRequest[])).catch(() => {});
+    } catch {
+      setBalanceResult("error");
+    } finally {
+      setBalanceLoading(false);
+    }
+  }
+
   async function handleChangeAmount(projectId: number) {
     const amount = parseFloat(changeAmount);
     if (isNaN(amount) || amount < 100) return;
@@ -185,14 +220,32 @@ export function ProfileForm() {
             {/* Avatar + info */}
             <div className="mb-8 flex items-center gap-4">
               <Avatar user={user} size="lg" />
-              <div>
-                <p className="font-semibold text-[var(--clr-text)]">
-                  {[user.first_name, user.last_name].filter(Boolean).join(" ") || "—"}
-                </p>
-                <p className="text-sm text-[var(--clr-text-2)]">{user.email}</p>
-                <span className="mt-1 inline-block rounded-lg border border-line bg-surface-2 px-2.5 py-0.5 text-xs font-semibold text-[var(--clr-text-2)]">
-                  {user.global_role}
-                </span>
+              <div className="flex-1">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-[var(--clr-text)]">
+                      {[user.first_name, user.last_name].filter(Boolean).join(" ") || "—"}
+                    </p>
+                    <p className="text-sm text-[var(--clr-text-2)]">{user.email}</p>
+                    <span className="mt-1 inline-block rounded-lg border border-line bg-surface-2 px-2.5 py-0.5 text-xs font-semibold text-[var(--clr-text-2)]">
+                      {user.global_role}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-medium text-[var(--clr-text-2)] uppercase tracking-wide">{t("investmentBalance")}</p>
+                    {(user.investment_balances ?? []).length === 0 ? (
+                      <p className="mt-0.5 text-lg font-bold text-[var(--clr-brand)]">0,00 €</p>
+                    ) : (
+                      <div className="mt-0.5 flex flex-col items-end gap-0.5">
+                        {(user.investment_balances ?? []).map(b => (
+                          <p key={b.currency} className="text-lg font-bold text-[var(--clr-brand)] leading-tight">
+                            {formatMoney(b.amount, b.currency)}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -238,6 +291,82 @@ export function ProfileForm() {
                 <Button variant="secondary" onClick={handleResetPassword} loading={resetLoading} loadingLabel={t("sendingReset")} className="w-full" size="lg">
                   {t("resetPassword")}
                 </Button>
+              )}
+            </div>
+
+            {/* Balance change request */}
+            <div className="mt-6 border-t border-line pt-6">
+              <div className="flex items-center justify-between gap-3">
+                {pendingBalanceCurrencies.size > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {Array.from(pendingBalanceCurrencies).map(cur => (
+                      <span key={cur} className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                        {t("balanceRequestPending")} ({cur})
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span />
+                )}
+                <Button variant="secondary" size="sm" onClick={() => { setShowBalanceForm(v => !v); setBalanceResult(null); }}>
+                  {t("balanceRequestBtn")}
+                </Button>
+              </div>
+
+              {balanceResult === "sent" && (
+                <Alert type="success" className="mt-3">{t("balanceRequestSent")}</Alert>
+              )}
+              {balanceResult === "error" && (
+                <Alert type="error" className="mt-3">{t("balanceRequestError")}</Alert>
+              )}
+
+              {showBalanceForm && (
+                <div className="mt-4 flex flex-col gap-3 rounded-xl border border-line bg-surface-2 p-4">
+                  <p className="text-sm font-semibold text-[var(--clr-text)]">{t("balanceRequestTitle")}</p>
+                  <SelectField
+                    label={t("balanceRequestCurrency")}
+                    value={balanceCurrency}
+                    onChange={(e) => setBalanceCurrency(e.target.value)}
+                  >
+                    <option value="EUR">EUR – Euro</option>
+                    <option value="USD">USD – US-Dollar</option>
+                    <option value="SYP">SYP – Syrisches Pfund</option>
+                  </SelectField>
+                  <InputField
+                    label={t("balanceRequestAmount")}
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={balanceAmount}
+                    onChange={(e) => setBalanceAmount(e.target.value)}
+                    placeholder="0.00"
+                  />
+                  {pendingBalanceCurrencies.has(balanceCurrency) && (
+                    <p className="text-xs text-amber-600">{t("balanceRequestPending")} ({balanceCurrency})</p>
+                  )}
+                  <InputField
+                    label={t("balanceRequestNote")}
+                    type="text"
+                    value={balanceNote}
+                    onChange={(e) => setBalanceNote(e.target.value)}
+                    placeholder="..."
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      loading={balanceLoading}
+                      loadingLabel="..."
+                      onClick={handleBalanceRequest}
+                      disabled={pendingBalanceCurrencies.has(balanceCurrency)}
+                      className="flex-1"
+                    >
+                      {t("balanceRequestSubmit")}
+                    </Button>
+                    <Button type="button" variant="secondary" onClick={() => setShowBalanceForm(false)} disabled={balanceLoading} className="flex-1">
+                      {t("cancel")}
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           </Card>

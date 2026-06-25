@@ -22,5 +22,15 @@
   "tabJoined": "Meine Projektbeteiligungen",
   "newProject": "+ Neu",
   "noProjects": "Noch keine Projekte vorhanden",
-  "createFirst": "Erstes Projekt erstellen →"
+  "createFirst": "Erstes Projekt erstellen →",
+  "investmentBalance": "Investment-Guthaben",
+  "balanceRequestBtn": "Guthabenänderung beantragen",
+  "balanceRequestTitle": "Guthabenänderung beantragen",
+  "balanceRequestCurrency": "Währung",
+  "balanceRequestAmount": "Betrag hinzufügen (€)",
+  "balanceRequestNote": "Begründung (optional)",
+  "balanceRequestSubmit": "Anfrage senden",
+  "balanceRequestSent": "Anfrage eingereicht – wird vom Admin geprüft.",
+  "balanceRequestPending": "Anfrage ausstehend",
+  "balanceRequestError": "Fehler beim Senden der Anfrage"
 }
