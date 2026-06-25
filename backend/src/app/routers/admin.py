@@ -290,6 +290,19 @@ def approve_request(
             if field and hasattr(project, field):
                 setattr(project, field, value)
 
+    elif req.type == RequestType.CHANGE_BALANCE:
+        from app.models.user_balance import UserBalance
+        currency = payload.get("currency", "EUR")
+        add_amount = _Decimal(str(payload.get("amount", 0)))
+        balance_row = db.query(UserBalance).filter(
+            UserBalance.user_id == req.requester_id,
+            UserBalance.currency == currency,
+        ).first()
+        if balance_row:
+            balance_row.amount = _Decimal(str(balance_row.amount or 0)) + add_amount
+        else:
+            db.add(UserBalance(user_id=req.requester_id, currency=currency, amount=add_amount))
+
     elif req.type == RequestType.CHANGE_PROJECT_STATUS and project:
         field = payload.get("field")
         value = payload.get("value")

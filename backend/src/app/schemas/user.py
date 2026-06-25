@@ -25,6 +25,7 @@ class UserResponse(BaseModel):
     avatar_url: str | None
     global_role: GlobalRole
     is_active: bool
+    investment_balances: list[dict] = []
     created_at: datetime | None = None
 
     model_config = {"from_attributes": True}

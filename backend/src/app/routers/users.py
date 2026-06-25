@@ -1,10 +1,13 @@
+import json
+from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.permissions import is_admin, is_superadmin
 from app.core.security import decode_access_token
-from app.models.admin_request import AdminRequest
+from app.models.admin_request import AdminRequest, RequestType, RequestStatus
 from app.models.project import Project, ProjectInterest, InterestType
 from app.models.user import GlobalRole, User
 from app.schemas.user import UserProfileUpdate, UserResponse, UserRoleUpdate
@@ -23,9 +26,13 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 
-@router.get("/me", response_model=UserResponse)
-def get_me(current_user: User = Depends(get_current_user)):
-    return current_user
+@router.get("/me")
+def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from app.models.user_balance import UserBalance
+    balances = db.query(UserBalance).filter(UserBalance.user_id == current_user.id).all()
+    data = UserResponse.model_validate(current_user).model_dump()
+    data["investment_balances"] = [{"currency": b.currency, "amount": float(b.amount)} for b in balances]
+    return data
 
 
 @router.patch("/me", response_model=UserResponse)
@@ -132,6 +139,49 @@ def get_my_requests(
             "created_at": r.created_at.isoformat(),
         })
     return result
+
+
+class BalanceChangeRequest(BaseModel):
+    amount: float
+    currency: str
+    note: str | None = None
+
+
+@router.post("/me/balance-request")
+def request_balance_change(
+    data: BalanceChangeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if data.amount < 0:
+        raise HTTPException(status_code=400, detail="Betrag darf nicht negativ sein")
+    if data.currency not in ("EUR", "USD", "SYP"):
+        raise HTTPException(status_code=400, detail="Ungültige Währung")
+    pending = (
+        db.query(AdminRequest)
+        .filter(
+            AdminRequest.requester_id == current_user.id,
+            AdminRequest.type == RequestType.CHANGE_BALANCE,
+            AdminRequest.status == RequestStatus.PENDING,
+        )
+        .first()
+    )
+    if pending:
+        pending_payload = json.loads(pending.payload) if pending.payload else {}
+        if pending_payload.get("currency") == data.currency:
+            raise HTTPException(status_code=400, detail="Es gibt bereits eine ausstehende Anfrage für diese Währung")
+    payload = {"amount": data.amount, "currency": data.currency}
+    if data.note:
+        payload["note"] = data.note
+    req = AdminRequest(
+        type=RequestType.CHANGE_BALANCE,
+        requester_id=current_user.id,
+        payload=json.dumps(payload),
+    )
+    db.add(req)
+    db.commit()
+    db.refresh(req)
+    return {"message": "Anfrage eingereicht", "request_id": req.id}
 
 
 @router.patch("/{user_id}/active", response_model=UserResponse)
