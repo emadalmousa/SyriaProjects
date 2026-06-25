@@ -10,6 +10,7 @@ from app.core.security import decode_access_token
 from app.models.admin_request import AdminRequest, RequestType, RequestStatus
 from app.models.project import Project, ProjectInterest, InterestType
 from app.models.user import GlobalRole, User
+from app.models.user_balance import UserBalance
 from app.schemas.user import UserProfileUpdate, UserResponse, UserRoleUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -28,7 +29,6 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 @router.get("/me")
 def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from app.models.user_balance import UserBalance
     balances = db.query(UserBalance).filter(UserBalance.user_id == current_user.id).all()
     data = UserResponse.model_validate(current_user).model_dump()
     data["investment_balances"] = [{"currency": b.currency, "amount": float(b.amount)} for b in balances]
@@ -153,7 +153,7 @@ def request_balance_change(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if data.amount < 0:
+    if data.amount <= 0:
         raise HTTPException(status_code=400, detail="Betrag darf nicht negativ sein")
     if data.currency not in ("EUR", "USD", "SYP"):
         raise HTTPException(status_code=400, detail="Ungültige Währung")

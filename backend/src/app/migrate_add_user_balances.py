@@ -17,6 +17,7 @@ def migrate():
                 UNIQUE(user_id, currency)
             )
         """))
+        # Users with investment_balance = 0 (default) get no row; absence of row means zero balance.
         # Migrate existing investment_balance > 0 to EUR row
         db.execute(text("""
             INSERT INTO user_balances (user_id, currency, amount)

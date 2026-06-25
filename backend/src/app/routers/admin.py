@@ -12,6 +12,7 @@ from app.models.project import (
     ProjectUpdate, ProjectRole, ProjectStatus, InterestStatus, InterestType,
 )
 from app.models.user import User
+from app.models.user_balance import UserBalance
 from app.routers.users import get_current_user
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -291,9 +292,10 @@ def approve_request(
                 setattr(project, field, value)
 
     elif req.type == RequestType.CHANGE_BALANCE:
-        from app.models.user_balance import UserBalance
         currency = payload.get("currency", "EUR")
         add_amount = _Decimal(str(payload.get("amount", 0)))
+        if add_amount <= 0:
+            raise HTTPException(status_code=400, detail="Ungültiger Betrag im Request-Payload")
         balance_row = db.query(UserBalance).filter(
             UserBalance.user_id == req.requester_id,
             UserBalance.currency == currency,

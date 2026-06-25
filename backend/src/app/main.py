@@ -59,7 +59,7 @@ def health():
 @app.post("/admin/reset-db")
 def reset_db(secret: str):
     from app.core.database import Base, engine
-    from app.models import user, project, token  # noqa
+    from app.models import user, project, token, user_balance  # noqa
     if secret != settings.secret_key:
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Forbidden")
