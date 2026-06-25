@@ -272,6 +272,85 @@ export function ProfileForm() {
                   );
                 })}
               </div>
+
+              {/* Request form – direkt unter den Cards */}
+              <div className="mt-3">
+                {balanceResult === "sent" && (
+                  <Alert type="success" className="mb-2">{t("balanceRequestSent")}</Alert>
+                )}
+                {balanceResult === "error" && (
+                  <Alert type="error" className="mb-2">{t("balanceRequestError")}</Alert>
+                )}
+
+                {!showBalanceForm ? (
+                  <button
+                    onClick={() => { setShowBalanceForm(true); setBalanceResult(null); }}
+                    className="w-full rounded-xl border border-dashed border-[var(--clr-brand)]/40 py-2 text-xs font-semibold text-[var(--clr-brand)] transition hover:border-[var(--clr-brand)] hover:bg-[var(--clr-brand)]/5"
+                  >
+                    + {t("balanceRequestBtn")}
+                  </button>
+                ) : (
+                  <div className="flex flex-col gap-2.5 rounded-xl border border-line bg-[var(--clr-bg)] p-3">
+                    <p className="text-xs font-semibold text-[var(--clr-text)]">{t("balanceRequestTitle")}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-[var(--clr-text-2)]">{t("balanceRequestCurrency")}</label>
+                        <div className="flex gap-1.5">
+                          {(["EUR", "USD", "SYP"] as const).map(cur => (
+                            <button
+                              key={cur}
+                              type="button"
+                              onClick={() => setBalanceCurrency(cur)}
+                              disabled={pendingBalanceCurrencies.has(cur)}
+                              className={`flex-1 rounded-lg border py-1.5 text-[10px] font-bold transition ${
+                                balanceCurrency === cur
+                                  ? "border-[var(--clr-brand)] bg-[var(--clr-brand)] text-white"
+                                  : pendingBalanceCurrencies.has(cur)
+                                  ? "border-line bg-surface-2 text-[var(--clr-text-3)] opacity-50 cursor-not-allowed"
+                                  : "border-line bg-surface-2 text-[var(--clr-text-2)] hover:border-[var(--clr-brand)]/50"
+                              }`}
+                            >
+                              {cur}
+                              {pendingBalanceCurrencies.has(cur) && <span className="ml-0.5">⏳</span>}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <InputField
+                        label={`${t("balanceRequestAmount")} (${balanceCurrency})`}
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={balanceAmount}
+                        onChange={(e) => setBalanceAmount(e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <InputField
+                      label={t("balanceRequestNote")}
+                      type="text"
+                      value={balanceNote}
+                      onChange={(e) => setBalanceNote(e.target.value)}
+                      placeholder="..."
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        loading={balanceLoading}
+                        loadingLabel="..."
+                        onClick={handleBalanceRequest}
+                        disabled={pendingBalanceCurrencies.has(balanceCurrency)}
+                        className="flex-1"
+                      >
+                        {t("balanceRequestSubmit")}
+                      </Button>
+                      <Button type="button" variant="secondary" onClick={() => { setShowBalanceForm(false); setBalanceResult(null); }} disabled={balanceLoading} className="flex-1">
+                        {t("cancel")}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {success && <Alert type="success" className="mb-5">{t("saveSuccess")}</Alert>}
@@ -319,70 +398,6 @@ export function ProfileForm() {
               )}
             </div>
 
-            {/* Balance change request */}
-            <div className="mt-6 border-t border-line pt-6">
-              <div className="flex items-center justify-end">
-                <Button variant="secondary" size="sm" onClick={() => { setShowBalanceForm(v => !v); setBalanceResult(null); }}>
-                  {t("balanceRequestBtn")}
-                </Button>
-              </div>
-
-              {balanceResult === "sent" && (
-                <Alert type="success" className="mt-3">{t("balanceRequestSent")}</Alert>
-              )}
-              {balanceResult === "error" && (
-                <Alert type="error" className="mt-3">{t("balanceRequestError")}</Alert>
-              )}
-
-              {showBalanceForm && (
-                <div className="mt-4 flex flex-col gap-3 rounded-xl border border-line bg-surface-2 p-4">
-                  <p className="text-sm font-semibold text-[var(--clr-text)]">{t("balanceRequestTitle")}</p>
-                  <SelectField
-                    label={t("balanceRequestCurrency")}
-                    value={balanceCurrency}
-                    onChange={(e) => setBalanceCurrency(e.target.value)}
-                  >
-                    <option value="EUR">EUR – Euro</option>
-                    <option value="USD">USD – US-Dollar</option>
-                    <option value="SYP">SYP – Syrisches Pfund</option>
-                  </SelectField>
-                  <InputField
-                    label={`${t("balanceRequestAmount")} (${balanceCurrency})`}
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={balanceAmount}
-                    onChange={(e) => setBalanceAmount(e.target.value)}
-                    placeholder="0.00"
-                  />
-                  {pendingBalanceCurrencies.has(balanceCurrency) && (
-                    <p className="text-xs text-amber-600">{t("balanceRequestPending")} ({balanceCurrency})</p>
-                  )}
-                  <InputField
-                    label={t("balanceRequestNote")}
-                    type="text"
-                    value={balanceNote}
-                    onChange={(e) => setBalanceNote(e.target.value)}
-                    placeholder="..."
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      loading={balanceLoading}
-                      loadingLabel="..."
-                      onClick={handleBalanceRequest}
-                      disabled={pendingBalanceCurrencies.has(balanceCurrency)}
-                      className="flex-1"
-                    >
-                      {t("balanceRequestSubmit")}
-                    </Button>
-                    <Button type="button" variant="secondary" onClick={() => { setShowBalanceForm(false); setBalanceResult(null); }} disabled={balanceLoading} className="flex-1">
-                      {t("cancel")}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
           </Card>
         )}
 
