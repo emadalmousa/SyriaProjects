@@ -4,6 +4,7 @@ export { FundingBar } from "./FundingBar";
 export { ProjectCard } from "./ProjectCard";
 export { ProjectFilters, emptyFilters, countFilters, CAPITAL_BUCKETS } from "./ProjectFilters";
 export { ProjectDetailView } from "./ProjectDetailView";
+export { ChatPanel } from "./ChatPanel";
 export { CreateProjectForm } from "./CreateProjectForm";
 export { MyProjectsView } from "./MyProjectsView";
 export type { ProjectFiltersState } from "./ProjectFilters";

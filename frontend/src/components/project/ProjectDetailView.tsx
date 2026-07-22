@@ -8,7 +8,7 @@ import { formatMoney, formatPercent } from "@/lib/format";
 import type { Project, ProjectMilestone, ProjectPhaseItem, ProjectUpdate, User, Participant } from "@/types";
 import { PageSpinner, Card, Alert, Tooltip } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
-import { StatusBadge, CategoryBadge, FundingBar, ALL_CATEGORIES } from "@/components/project";
+import { StatusBadge, CategoryBadge, FundingBar, ALL_CATEGORIES, ChatPanel } from "@/components/project";
 import { InputField, SelectField, TextareaField } from "@/components/ui";
 import { ConfirmDialog } from "@/components/management";
 
@@ -100,6 +100,11 @@ export function ProjectDetailView() {
   const [editSuccess, setEditSuccess]   = useState(false);
   const [editError, setEditError]       = useState("");
 
+  // chat tab state
+  type Tab = "overview" | "chat";
+  const [activeTab, setActiveTab]       = useState<Tab>("overview");
+  const [isMember, setIsMember]         = useState(false);
+
   // Fix 13: Include participants in main Promise.all
   useEffect(() => {
     Promise.all([
@@ -109,8 +114,9 @@ export function ProjectDetailView() {
       api.projects.updates.list(id),
       api.users.me(),
       api.projects.participants(id),
+      api.projects.members.list(id),
     ])
-      .then(([p, ms, pi, upd, me, parts]) => {
+      .then(([p, ms, pi, upd, me, parts, ml]) => {
         const proj = p as Project;
         setProject(proj);
         setPhases(ms as ProjectMilestone[]);
@@ -128,6 +134,11 @@ export function ProjectDetailView() {
           else if (mine.status === "REJECTED")  setJoinStatus("rejected");
           else if (mine.status === "WITHDRAWN") setJoinStatus("rejected");
         }
+        const memberList = ml as import("@/types").ProjectMember[];
+        setIsMember(
+          memberList.some((m) => m.user_id === user.id) ||
+          proj.created_by_user_id === user.id
+        );
       })
       .catch(() => router.push("/login"));
   }, [id, router]);
@@ -257,9 +268,33 @@ export function ProjectDetailView() {
           />
         )}
 
+        {/* Tab bar — only visible to project members */}
+        {isMember && (
+          <div className="mb-5 flex gap-1 border-b border-[var(--clr-line)]">
+            {(["overview", "chat"] as Tab[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2.5 text-sm font-medium transition ${
+                  activeTab === tab
+                    ? "border-b-2 border-[var(--clr-brand)] text-[var(--clr-brand)]"
+                    : "text-[var(--clr-text-2)] hover:text-[var(--clr-text)]"
+                }`}
+              >
+                {tab === "overview" ? t("detail.tabOverview") : t("chat.tabTitle")}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Chat panel */}
+        {activeTab === "chat" && isMember && currentUser && (
+          <ChatPanel projectId={id} currentUser={currentUser} />
+        )}
+
         {/* Fix 10: Responsive layout — main content first in DOM (shows first on mobile),
             sidebar uses lg:order-first to appear left on desktop */}
-        <div className="flex flex-col gap-6 lg:flex-row">
+        {activeTab === "overview" && <div className="flex flex-col gap-6 lg:flex-row">
 
           {/* Main Content */}
           <div className="min-w-0 flex-1">
@@ -744,7 +779,7 @@ export function ProjectDetailView() {
             </div>
           </aside>
 
-        </div> {/* end flex gap-6 */}
+        </div>} {/* end flex gap-6 / overview tab */}
 
       </div>
     </div>

@@ -29,13 +29,12 @@ _first_admin_lock = threading.Lock()
 
 
 def _assign_role(db: Session) -> GlobalRole:
-    admin_exists = (
+    any_user_exists = (
         db.query(User)
-        .filter(User.global_role.in_([GlobalRole.ADMIN, GlobalRole.SUPERADMIN]))
         .with_for_update()
         .first()
     )
-    return GlobalRole.USER if admin_exists else GlobalRole.ADMIN
+    return GlobalRole.USER if any_user_exists else GlobalRole.SUPERADMIN
 
 
 def _create_auth_token(db: Session, user_id: int, token_type: TokenType, expires_delta: timedelta) -> str:

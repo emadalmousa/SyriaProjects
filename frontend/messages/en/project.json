@@ -57,7 +57,8 @@
     "CHANGE_PARTICIPATION": "Participation change",
     "WITHDRAW_PARTICIPATION": "End participation",
     "CHANGE_PROJECT_DATA": "Change project data",
-    "CHANGE_PROJECT_STATUS": "Change project status"
+    "CHANGE_PROJECT_STATUS": "Change project status",
+    "CHANGE_BALANCE": "Balance change"
   },
   "category": {
     "FOOD": "Food",
@@ -213,6 +214,18 @@
     "participantStatus": "Status",
     "removeParticipant": "Remove",
     "projectCreator": "Project creator",
-    "creatorRole": "Founder"
+    "creatorRole": "Founder",
+    "tabOverview": "Overview"
+  },
+  "chat": {
+    "tabTitle": "Group Chat",
+    "placeholder": "Write a message…",
+    "send": "Send",
+    "loadOlder": "Load older messages",
+    "loading": "Loading…",
+    "you": "You",
+    "deletedUser": "Deleted User",
+    "sendError": "Failed to send message",
+    "loadError": "Failed to load messages"
   }
 }

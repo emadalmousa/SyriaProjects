@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.routers import auth, projects, uploads, users
 from app.routers import admin
 from app.routers.participation import router as participation_router
+from app.routers.chat import router as chat_router
 
 app = FastAPI(title="Project Platform API", version="0.1.0")
 
@@ -47,6 +48,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(projects.router)
 app.include_router(participation_router)
+app.include_router(chat_router)
 app.include_router(uploads.router)
 app.include_router(admin.router)
 

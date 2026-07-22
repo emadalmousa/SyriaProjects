@@ -57,7 +57,8 @@
     "CHANGE_PARTICIPATION": "Beteiligungsänderung",
     "WITHDRAW_PARTICIPATION": "Teilnahme beenden",
     "CHANGE_PROJECT_DATA": "Projektdaten ändern",
-    "CHANGE_PROJECT_STATUS": "Projektstatus ändern"
+    "CHANGE_PROJECT_STATUS": "Projektstatus ändern",
+    "CHANGE_BALANCE": "Guthabenänderung"
   },
   "category": {
     "FOOD": "Lebensmittel",
@@ -213,6 +214,18 @@
     "participantStatus": "Status",
     "removeParticipant": "Entfernen",
     "projectCreator": "Projektersteller",
-    "creatorRole": "Gründer"
+    "creatorRole": "Gründer",
+    "tabOverview": "Übersicht"
+  },
+  "chat": {
+    "tabTitle": "Gruppenchat",
+    "placeholder": "Nachricht schreiben…",
+    "send": "Senden",
+    "loadOlder": "Ältere Nachrichten laden",
+    "loading": "Wird geladen…",
+    "you": "Du",
+    "deletedUser": "Gelöschter Nutzer",
+    "sendError": "Nachricht konnte nicht gesendet werden",
+    "loadError": "Nachrichten konnten nicht geladen werden"
   }
 }

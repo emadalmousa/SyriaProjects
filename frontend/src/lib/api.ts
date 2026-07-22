@@ -1,3 +1,5 @@
+import type { ChatMessage, ChatMessagePage } from "@/types";
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 function getToken(): string | null {
@@ -157,6 +159,20 @@ export const api = {
         request(`/projects/${projectId}/updates/${updateId}`, { method: "PATCH", body: JSON.stringify(data) }),
       delete: (projectId: number, updateId: number) =>
         request(`/projects/${projectId}/updates/${updateId}`, { method: "DELETE" }),
+    },
+    chat: {
+      list: (projectId: number, params?: { before_id?: number; limit?: number }) => {
+        const qs = new URLSearchParams();
+        if (params?.before_id != null) qs.set("before_id", String(params.before_id));
+        if (params?.limit != null) qs.set("limit", String(params.limit));
+        const q = qs.toString() ? `?${qs}` : "";
+        return request<ChatMessagePage>(`/projects/${projectId}/chat${q}`);
+      },
+      send: (projectId: number, content: string) =>
+        request<ChatMessage>(`/projects/${projectId}/chat`, {
+          method: "POST",
+          body: JSON.stringify({ content }),
+        }),
     },
   },
 };

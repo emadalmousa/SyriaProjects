@@ -270,3 +270,24 @@ export interface UserInterest {
   status: InterestStatus;
   created_at: string;
 }
+
+export interface ChatSenderInfo {
+  id: number;
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
+export interface ChatMessage {
+  id: number;
+  project_id: number;
+  sender_user_id: number | null;
+  sender: ChatSenderInfo | null;
+  content: string;
+  created_at: string;
+}
+
+export interface ChatMessagePage {
+  messages: ChatMessage[];
+  next_cursor: number | null;
+  has_more: boolean;
+}

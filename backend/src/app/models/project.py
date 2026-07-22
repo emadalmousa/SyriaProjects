@@ -220,3 +220,13 @@ class ProjectUpdate(Base):
     visibility = Column(Enum(ProjectUpdateVisibility), default=ProjectUpdateVisibility.PUBLIC, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class ProjectChatMessage(Base):
+    __tablename__ = "project_chat_messages"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    project_id     = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    sender_user_id = Column(Integer, ForeignKey("users.id",    ondelete="SET NULL"), nullable=True)
+    content        = Column(Text, nullable=False)
+    created_at     = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)

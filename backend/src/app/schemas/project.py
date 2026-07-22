@@ -368,3 +368,42 @@ class ProjectPhaseItemRead(BaseModel):
     sort_order: int
 
     model_config = {"from_attributes": True}
+
+
+class ChatMessageCreate(BaseModel):
+    content: str
+
+    @field_validator("content")
+    @classmethod
+    def content_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Message cannot be empty")
+        if len(v) > 2000:
+            raise ValueError("Message too long (max 2000 characters)")
+        return v
+
+
+class ChatSenderInfo(BaseModel):
+    id: int
+    full_name: str | None = None
+    avatar_url: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class ChatMessageRead(BaseModel):
+    id: int
+    project_id: int
+    sender_user_id: int | None = None
+    sender: ChatSenderInfo | None = None
+    content: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ChatMessagePage(BaseModel):
+    messages: list[ChatMessageRead]
+    next_cursor: int | None = None
+    has_more: bool
