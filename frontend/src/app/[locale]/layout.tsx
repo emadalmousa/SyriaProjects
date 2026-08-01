@@ -2,6 +2,7 @@ import { Lora, Plus_Jakarta_Sans, Noto_Sans_Arabic } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import { routing, rtlLocales, type Locale } from "@/i18n/routing";
 import { Providers } from "../providers";
 import "../globals.css";
@@ -55,6 +56,7 @@ export default async function LocaleLayout({
       className={`${displayFont.variable} ${sansFont.variable} ${arabicFont.variable}`}
     >
       <body className="bg-[var(--clr-bg)] text-[var(--clr-text)] font-sans">
+        <Script src="https://accounts.google.com/gsi/client" strategy="beforeInteractive" />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>{children}</Providers>
         </NextIntlClientProvider>

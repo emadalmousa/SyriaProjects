@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -9,6 +9,21 @@ import { saveToken } from "@/lib/auth";
 import { Alert, Button, PageSpinner } from "@/components/ui";
 import { InputField, PasswordField } from "@/components/ui";
 import { AuthCard, AuthBrand } from "@/components/auth";
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: { client_id: string; callback: (res: { credential: string }) => void }) => void;
+          prompt: () => void;
+        };
+      };
+    };
+  }
+}
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 
 function LoginContent() {
   const router = useRouter();
@@ -23,6 +38,37 @@ function LoginContent() {
   const [showResend, setShowResend]       = useState(false);
   const [resendSent, setResendSent]       = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || !window.google) return;
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredential,
+    });
+  }, []);
+
+  async function handleGoogleCredential(response: { credential: string }) {
+    setGoogleLoading(true);
+    setError("");
+    try {
+      const data = await api.auth.googleLogin(response.credential);
+      saveToken(data.access_token);
+      router.push("/dashboard");
+    } catch {
+      setError(t("googleFailed"));
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
+
+  function handleGoogle() {
+    if (!GOOGLE_CLIENT_ID) {
+      setError("Google Login ist nicht konfiguriert.");
+      return;
+    }
+    window.google?.accounts.id.prompt();
+  }
 
   const registeredParam = searchParams.get("registered");
 
@@ -67,7 +113,6 @@ function LoginContent() {
         <Alert type="error" className="mb-4">{error}</Alert>
       ) : null}
 
-      {/* Google – temporarily disabled
       <button
         onClick={handleGoogle}
         disabled={googleLoading}
@@ -87,7 +132,6 @@ function LoginContent() {
         <span className="text-xs text-[var(--clr-text-3)]">{tc("or")}</span>
         <div className="flex-1 border-t border-line" />
       </div>
-      */}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <InputField label={t("email")} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="deine@email.de" required ltr />
