@@ -1,10 +1,24 @@
-import type { ChatMessage, ChatMessagePage } from "@/types";
+import type { ChatMessage, ChatMessagePage, ProjectDocument, UserDocument } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("token");
+}
+
+async function uploadFile<T>(path: string, file: File): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${BASE_URL}${path}`, { method: "POST", headers, body: formData });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Upload failed");
+  }
+  return res.json();
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -51,8 +65,26 @@ export const api = {
       request(`/users/${userId}/active`, { method: "PATCH" }),
     myInterests: () => request("/users/me/interests"),
     myRequests: () => request("/users/me/requests"),
-    requestBalanceChange: (amount: number, currency: string, note?: string) =>
-      request("/users/me/balance-request", { method: "POST", body: JSON.stringify({ amount, currency, note }) }),
+    requestBalanceChange: (amount: number, currency: string, file: File, note?: string) => {
+      const token = getToken();
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const fd = new FormData();
+      fd.append("amount", String(amount));
+      fd.append("currency", currency);
+      fd.append("file", file);
+      if (note) fd.append("note", note);
+      return fetch(`${BASE_URL}/users/me/balance-request`, { method: "POST", headers, body: fd })
+        .then(async res => {
+          if (!res.ok) { const err = await res.json().catch(() => ({ detail: res.statusText })); throw new Error(err.detail || "Request failed"); }
+          return res.json();
+        });
+    },
+    documents: {
+      list: () => request<UserDocument[]>("/users/me/documents"),
+      upload: (file: File) => uploadFile<UserDocument>("/users/me/documents", file),
+      delete: (docId: number) => request<void>(`/users/me/documents/${docId}`, { method: "DELETE" }),
+    },
   },
   admin: {
     testDataStatus: () => request<{ exists: boolean; users: number; projects: number }>("/admin/test-data/status"),
@@ -93,11 +125,11 @@ export const api = {
     update: (id: number, data: object) => request(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     updateStatus: (id: number, status: string) => request(`/projects/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
     updateVisibility: (id: number, visibility: string) => request(`/projects/${id}/visibility`, { method: "PATCH", body: JSON.stringify({ visibility }) }),
-    join: (projectId: number, amount: number) =>
-      request(`/projects/${projectId}/join`, { method: "POST", body: JSON.stringify({ amount }) }),
+    join: (projectId: number, amount: number, currency: string) =>
+      request(`/projects/${projectId}/join`, { method: "POST", body: JSON.stringify({ amount, currency }) }),
     withdrawParticipation: (projectId: number) =>
       request(`/projects/${projectId}/participation`, { method: "DELETE" }),
-    changeParticipation: (projectId: number, data: { amount?: number; message?: string }) =>
+    changeParticipation: (projectId: number, data: { amount?: number; currency?: string; message?: string }) =>
       request(`/projects/${projectId}/participation`, {
         method: "PATCH",
         body: JSON.stringify(data),
@@ -173,6 +205,14 @@ export const api = {
           method: "POST",
           body: JSON.stringify({ content }),
         }),
+    },
+    documents: {
+      list: (projectId: number) =>
+        request<ProjectDocument[]>(`/projects/${projectId}/documents`),
+      uploadProjectDoc: (projectId: number, file: File) =>
+        uploadFile<ProjectDocument>(`/projects/${projectId}/documents`, file),
+      uploadParticipantDoc: (projectId: number, interestId: number, file: File) =>
+        uploadFile<ProjectDocument>(`/projects/${projectId}/participants/${interestId}/documents`, file),
     },
   },
 };

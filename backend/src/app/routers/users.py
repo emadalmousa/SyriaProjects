@@ -1,6 +1,8 @@
 import json
+import uuid
 from decimal import Decimal
-from fastapi import APIRouter, Depends, HTTPException
+import cloudinary.uploader
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -9,9 +11,11 @@ from app.core.permissions import is_admin, is_superadmin
 from app.core.security import decode_access_token
 from app.models.admin_request import AdminRequest, RequestType, RequestStatus
 from app.models.project import Project, ProjectInterest, InterestType
-from app.models.user import GlobalRole, User
+from app.models.user import GlobalRole, User, UserDocument
 from app.models.user_balance import UserBalance
-from app.schemas.user import UserProfileUpdate, UserResponse, UserRoleUpdate
+from app.schemas.user import UserDocumentRead, UserProfileUpdate, UserResponse, UserRoleUpdate
+
+MAX_PDF_SIZE = 10 * 1024 * 1024
 
 router = APIRouter(prefix="/users", tags=["users"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -141,22 +145,26 @@ def get_my_requests(
     return result
 
 
-class BalanceChangeRequest(BaseModel):
-    amount: float
-    currency: str
-    note: str | None = None
-
-
 @router.post("/me/balance-request")
-def request_balance_change(
-    data: BalanceChangeRequest,
+async def request_balance_change(
+    amount: float = Form(...),
+    currency: str = Form(...),
+    note: str | None = Form(default=None),
+    file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if data.amount <= 0:
+    if amount <= 0:
         raise HTTPException(status_code=400, detail="Betrag darf nicht negativ sein")
-    if data.currency not in ("EUR", "USD", "SYP"):
+    if currency not in ("EUR", "USD", "SYP"):
         raise HTTPException(status_code=400, detail="Ungültige Währung")
+
+    content = await file.read()
+    if len(content) > MAX_PDF_SIZE:
+        raise HTTPException(status_code=413, detail="Datei zu groß. Maximale Größe: 10 MB")
+    if not content.startswith(b"%PDF"):
+        raise HTTPException(status_code=415, detail="Nur PDF-Dateien sind erlaubt")
+
     pending = (
         db.query(AdminRequest)
         .filter(
@@ -168,15 +176,26 @@ def request_balance_change(
     )
     if pending:
         pending_payload = json.loads(pending.payload) if pending.payload else {}
-        if pending_payload.get("currency") == data.currency:
+        if pending_payload.get("currency") == currency:
             raise HTTPException(status_code=400, detail="Es gibt bereits eine ausstehende Anfrage für diese Währung")
-    payload = {"amount": data.amount, "currency": data.currency}
-    if data.note:
-        payload["note"] = data.note
+
+    result = cloudinary.uploader.upload(
+        content,
+        resource_type="raw",
+        folder="syria-projects/balance-docs",
+        public_id=str(uuid.uuid4()),
+        use_filename=False,
+        unique_filename=True,
+    )
+    document_url = result["secure_url"]
+
+    payload_data: dict = {"amount": amount, "currency": currency, "document_url": document_url}
+    if note:
+        payload_data["note"] = note
     req = AdminRequest(
         type=RequestType.CHANGE_BALANCE,
         requester_id=current_user.id,
-        payload=json.dumps(payload),
+        payload=json.dumps(payload_data),
     )
     db.add(req)
     db.commit()
@@ -203,3 +222,64 @@ def set_user_active(
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.post("/me/documents", response_model=UserDocumentRead, status_code=201)
+async def upload_user_document(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    content = await file.read()
+    if len(content) > MAX_PDF_SIZE:
+        raise HTTPException(status_code=413, detail="Datei zu groß. Maximale Größe: 10 MB")
+    if not content.startswith(b"%PDF"):
+        raise HTTPException(status_code=415, detail="Nur PDF-Dateien sind erlaubt")
+    if file.content_type and file.content_type not in {"application/pdf", "application/x-pdf"}:
+        raise HTTPException(status_code=415, detail="Nur PDF-Dateien sind erlaubt")
+
+    result = cloudinary.uploader.upload(
+        content,
+        resource_type="raw",
+        folder="syria-projects/user-docs",
+        public_id=str(uuid.uuid4()),
+        use_filename=False,
+        unique_filename=True,
+    )
+    doc = UserDocument(
+        user_id=current_user.id,
+        file_url=result["secure_url"],
+        original_name=file.filename or "document.pdf",
+    )
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
+    return doc
+
+
+@router.get("/me/documents", response_model=list[UserDocumentRead])
+def list_user_documents(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return (
+        db.query(UserDocument)
+        .filter(UserDocument.user_id == current_user.id)
+        .order_by(UserDocument.created_at.desc())
+        .all()
+    )
+
+
+@router.delete("/me/documents/{doc_id}", status_code=204)
+def delete_user_document(
+    doc_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    doc = db.get(UserDocument, doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Dokument nicht gefunden")
+    if doc.user_id != current_user.id and not is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Keine Berechtigung")
+    db.delete(doc)
+    db.commit()

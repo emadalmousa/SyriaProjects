@@ -227,5 +227,19 @@
     "deletedUser": "Gelöschter Nutzer",
     "sendError": "Nachricht konnte nicht gesendet werden",
     "loadError": "Nachrichten konnten nicht geladen werden"
+  },
+  "documents": {
+    "title": "Dokumente",
+    "projectDocuments": "Projektdokumente",
+    "myDocuments": "Meine Dokumente",
+    "noDocuments": "Keine Dokumente vorhanden",
+    "upload": "PDF hochladen",
+    "uploading": "Wird hochgeladen…",
+    "uploadError": "Fehler beim Hochladen",
+    "fileTooLarge": "Datei zu groß (max. 10 MB)",
+    "pdfOnly": "Nur PDF-Dateien sind erlaubt",
+    "open": "Öffnen",
+    "projectDocument": "Projektdokument",
+    "participantDocument": "Mein Dokument"
   }
 }

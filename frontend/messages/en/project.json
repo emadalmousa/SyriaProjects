@@ -227,5 +227,19 @@
     "deletedUser": "Deleted User",
     "sendError": "Failed to send message",
     "loadError": "Failed to load messages"
+  },
+  "documents": {
+    "title": "Documents",
+    "projectDocuments": "Project Documents",
+    "myDocuments": "My Documents",
+    "noDocuments": "No documents yet",
+    "upload": "Upload PDF",
+    "uploading": "Uploading…",
+    "uploadError": "Upload failed",
+    "fileTooLarge": "File too large (max 10 MB)",
+    "pdfOnly": "Only PDF files are allowed",
+    "open": "Open",
+    "projectDocument": "Project Document",
+    "participantDocument": "My Document"
   }
 }

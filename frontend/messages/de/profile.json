@@ -32,5 +32,18 @@
   "balanceRequestSubmit": "Anfrage senden",
   "balanceRequestSent": "Anfrage eingereicht – wird vom Admin geprüft.",
   "balanceRequestPending": "Anfrage ausstehend",
-  "balanceRequestError": "Fehler beim Senden der Anfrage"
+  "balanceRequestDoc": "Nachweis (PDF)",
+  "balanceRequestDocPlaceholder": "PDF auswählen…",
+  "balanceRequestError": "Fehler beim Senden der Anfrage",
+  "documents": {
+    "title": "Meine Dokumente",
+    "upload": "PDF hochladen",
+    "uploading": "Wird hochgeladen…",
+    "noDocuments": "Noch keine Dokumente",
+    "open": "Öffnen",
+    "delete": "Löschen",
+    "pdfOnly": "Nur PDF-Dateien erlaubt",
+    "fileTooLarge": "Max. 10 MB erlaubt",
+    "uploadError": "Fehler beim Hochladen"
+  }
 }

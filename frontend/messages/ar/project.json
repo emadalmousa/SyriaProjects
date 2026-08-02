@@ -227,5 +227,19 @@
     "deletedUser": "مستخدم محذوف",
     "sendError": "تعذّر إرسال الرسالة",
     "loadError": "تعذّر تحميل الرسائل"
+  },
+  "documents": {
+    "title": "الوثائق",
+    "projectDocuments": "وثائق المشروع",
+    "myDocuments": "وثائقي",
+    "noDocuments": "لا توجد وثائق",
+    "upload": "رفع PDF",
+    "uploading": "جارٍ الرفع…",
+    "uploadError": "فشل الرفع",
+    "fileTooLarge": "الملف كبير جداً (الحد الأقصى 10 ميغابايت)",
+    "pdfOnly": "يُسمح بملفات PDF فقط",
+    "open": "فتح",
+    "projectDocument": "وثيقة المشروع",
+    "participantDocument": "وثيقتي"
   }
 }

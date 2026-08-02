@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel, EmailStr, Field, field_serializer
 from app.models.user import GlobalRole, UserType
 
@@ -48,3 +49,13 @@ class UserProfileUpdate(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     id_token: str
+
+
+class UserDocumentRead(BaseModel):
+    id: int
+    user_id: int
+    file_url: str
+    original_name: str
+    created_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}

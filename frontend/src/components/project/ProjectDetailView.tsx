@@ -9,6 +9,7 @@ import type { Project, ProjectMilestone, ProjectPhaseItem, ProjectUpdate, User, 
 import { PageSpinner, Card, Alert, Tooltip } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
 import { StatusBadge, CategoryBadge, FundingBar, ALL_CATEGORIES, ChatPanel } from "@/components/project";
+import { DocumentUploadPanel } from "@/components/project/DocumentUploadPanel";
 import { InputField, SelectField, TextareaField } from "@/components/ui";
 import { ConfirmDialog } from "@/components/management";
 
@@ -79,13 +80,16 @@ export function ProjectDetailView() {
   const [participants, setParticipants] = useState<Participant[]>([]);
 
   // join state
+  const [myInterestId, setMyInterestId]   = useState<number | null>(null);
   const [joining, setJoining]             = useState(false);
   const [showJoinForm, setShowJoinForm]   = useState(false);
   const [joinAmount, setJoinAmount]       = useState("");
+  const [joinCurrency, setJoinCurrency]   = useState("EUR");
   const [joinAmountError, setJoinAmountError] = useState("");
   const [joinStatus, setJoinStatus]       = useState<"idle" | "pending" | "accepted" | "rejected">("idle");
   const [showChangeForm, setShowChangeForm] = useState(false);
   const [changeAmount, setChangeAmount]   = useState("");
+  const [changeCurrency, setChangeCurrency] = useState("EUR");
   const [changeAmountError, setChangeAmountError] = useState("");
   const [changing, setChanging]           = useState(false);
 
@@ -129,7 +133,8 @@ export function ProjectDetailView() {
         // Fix 3: also handle WITHDRAWN → show as rejected (no join button)
         const mine = list.find(part => part.user_id === user.id);
         if (mine) {
-          if (mine.status === "ACCEPTED")       { setJoinStatus("accepted"); setChangeAmount(mine.amount ? String(mine.amount) : ""); }
+          setMyInterestId(mine.interest_id);
+          if (mine.status === "ACCEPTED")       { setJoinStatus("accepted"); setChangeAmount(mine.amount ? String(mine.amount) : ""); setChangeCurrency(mine.currency || "EUR"); }
           else if (mine.status === "PENDING")   setJoinStatus("pending");
           else if (mine.status === "REJECTED")  setJoinStatus("rejected");
           else if (mine.status === "WITHDRAWN") setJoinStatus("rejected");
@@ -143,16 +148,18 @@ export function ProjectDetailView() {
       .catch(() => router.push("/login"));
   }, [id, router]);
 
+  function minAmount(currency: string) { return currency === "SYP" ? 10000 : 100; }
+
   async function handleJoin() {
     const amount = parseFloat(joinAmount);
-    if (isNaN(amount) || amount < 100) {
-      setJoinAmountError(t("joinAmountMin"));
+    if (isNaN(amount) || amount < minAmount(joinCurrency)) {
+      setJoinAmountError(`min. ${minAmount(joinCurrency)} ${joinCurrency}`);
       return;
     }
     setJoining(true);
     setJoinAmountError("");
     try {
-      await api.projects.join(id, amount);
+      await api.projects.join(id, amount, joinCurrency);
       setJoinStatus("pending");
       setShowJoinForm(false);
     } catch (err: unknown) {
@@ -168,14 +175,14 @@ export function ProjectDetailView() {
 
   async function handleChangeContribution() {
     const amount = parseFloat(changeAmount);
-    if (isNaN(amount) || amount < 100) {
-      setChangeAmountError(t("joinAmountMin"));
+    if (isNaN(amount) || amount < minAmount(changeCurrency)) {
+      setChangeAmountError(`min. ${minAmount(changeCurrency)} ${changeCurrency}`);
       return;
     }
     setChanging(true);
     setChangeAmountError("");
     try {
-      await api.projects.changeParticipation(id, { amount });
+      await api.projects.changeParticipation(id, { amount, currency: changeCurrency });
       setShowChangeForm(false);
     } catch {
       setChangeAmountError(t("editError"));
@@ -339,9 +346,18 @@ export function ProjectDetailView() {
                               min="100"
                               value={changeAmount}
                               onChange={e => { setChangeAmount(e.target.value); setChangeAmountError(""); }}
-                              placeholder={t("joinAmountPlaceholder")}
+                              placeholder={`min. ${minAmount(changeCurrency)} ${changeCurrency}`}
                               className="flex-1 rounded-lg border border-[var(--clr-line)] bg-[var(--clr-bg)] px-3 py-2 text-sm outline-none focus:border-[var(--clr-brand)]"
                             />
+                            <select
+                              value={changeCurrency}
+                              onChange={e => setChangeCurrency(e.target.value)}
+                              className="rounded-lg border border-[var(--clr-line)] bg-[var(--clr-bg)] px-2 py-2 text-sm outline-none focus:border-[var(--clr-brand)]"
+                            >
+                              <option value="EUR">EUR</option>
+                              <option value="USD">USD</option>
+                              <option value="SYP">SYP</option>
+                            </select>
                             <button
                               onClick={handleChangeContribution}
                               disabled={changing}
@@ -380,9 +396,18 @@ export function ProjectDetailView() {
                           min="100"
                           value={joinAmount}
                           onChange={e => { setJoinAmount(e.target.value); setJoinAmountError(""); }}
-                          placeholder={t("joinAmountPlaceholder")}
+                          placeholder={`min. ${minAmount(joinCurrency)} ${joinCurrency}`}
                           className="flex-1 rounded-lg border border-[var(--clr-line)] bg-[var(--clr-bg)] px-3 py-2 text-sm outline-none focus:border-[var(--clr-brand)]"
                         />
+                        <select
+                          value={joinCurrency}
+                          onChange={e => setJoinCurrency(e.target.value)}
+                          className="rounded-lg border border-[var(--clr-line)] bg-[var(--clr-bg)] px-2 py-2 text-sm outline-none focus:border-[var(--clr-brand)]"
+                        >
+                          <option value="EUR">EUR</option>
+                          <option value="USD">USD</option>
+                          <option value="SYP">SYP</option>
+                        </select>
                         <button
                           onClick={handleJoin}
                           disabled={joining}
@@ -410,6 +435,15 @@ export function ProjectDetailView() {
                     >
                       {t("join")}
                     </button>
+                  )}
+                  {/* Teilnehmer-Dokumente */}
+                  {myInterestId !== null && (joinStatus === "accepted" || joinStatus === "pending") && (
+                    <DocumentUploadPanel
+                      projectId={id}
+                      interestId={myInterestId}
+                      canUpload={true}
+                      title={t("documents.myDocuments")}
+                    />
                   )}
                 </div>
               )}
@@ -616,6 +650,17 @@ export function ProjectDetailView() {
           </Card>
         )}
 
+        {/* Projektdokumente (nur für Projektinhaber und Admins) */}
+        {isOwner && (
+          <Card className="mt-6 p-6">
+            <DocumentUploadPanel
+              projectId={id}
+              canUpload={true}
+              title={t("documents.projectDocuments")}
+            />
+          </Card>
+        )}
+
         {/* Projektdetails */}
         {(project.start_date || project.address_text || project.created_at || project.video_url) && (
           <Card className="mt-6 p-6">
@@ -701,7 +746,7 @@ export function ProjectDetailView() {
                               <p className="truncate text-xs font-semibold text-[var(--clr-text)]">{p.full_name || p.email || "—"}</p>
                               {p.country && <p className="truncate text-[10px] text-[var(--clr-text-3)]">{p.country}</p>}
                               {p.amount && (
-                                <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(p.amount, project.currency)}</p>
+                                <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(p.amount, p.currency || project.currency)}</p>
                               )}
                             </div>
                             {/* Fix 11+12: confirmation dialog + aria-label */}
@@ -754,7 +799,7 @@ export function ProjectDetailView() {
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-xs text-[var(--clr-text)]">{p.full_name || p.email || "—"}</p>
                               {p.country && <p className="truncate text-[10px] text-[var(--clr-text-3)]">{p.country}</p>}
-                              {p.amount && <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400">{formatMoney(p.amount, project.currency)}</p>}
+                              {p.amount && <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400">{formatMoney(p.amount, p.currency || project.currency)}</p>}
                             </div>
                             {/* Fix 11+12: confirmation dialog + aria-label */}
                             {isOwner && (

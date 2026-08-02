@@ -28,6 +28,7 @@ LATE_STAGE_STATUSES = {
 
 class ParticipationChangeRequest(BaseModel):
     amount: Decimal | None = None
+    currency: str | None = None
     message: str | None = None
 
 
@@ -67,13 +68,22 @@ def change_participation(
     if existing:
         raise HTTPException(status_code=409, detail="Eine Änderungsanfrage ist bereits ausstehend")
 
-    if data.amount and data.amount < Decimal("100"):
-        raise HTTPException(status_code=400, detail="Mindestbetrag ist 100 €")
+    min_amounts = {"EUR": Decimal("100"), "USD": Decimal("100"), "SYP": Decimal("10000")}
+    currency = data.currency or interest.currency or "EUR"
+    minimum = min_amounts.get(currency, Decimal("100"))
+    if data.amount and data.amount < minimum:
+        raise HTTPException(status_code=400, detail=f"Mindestbetrag ist {minimum} {currency}")
+
+    if data.currency and data.currency not in ("EUR", "USD", "SYP"):
+        raise HTTPException(status_code=400, detail="Ungültige Währung")
 
     payload = {}
     if data.amount is not None:
         payload["amount"] = float(data.amount)
         payload["old_amount"] = float(interest.amount) if interest.amount else 0
+    if data.currency is not None:
+        payload["currency"] = data.currency
+        payload["old_currency"] = interest.currency or "EUR"
     if data.message is not None:
         payload["message"] = data.message
 

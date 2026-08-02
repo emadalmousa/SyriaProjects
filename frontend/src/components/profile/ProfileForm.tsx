@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
@@ -10,6 +10,7 @@ import { Alert, Button, Avatar, PageSpinner, Tooltip } from "@/components/ui";
 import { InputField, SelectField } from "@/components/ui";
 import { Card } from "@/components/ui";
 import { StatusBadge } from "@/components/project";
+import { UserDocumentPanel } from "@/components/profile/UserDocumentPanel";
 
 const COUNTRIES = [
   "Syrien","Deutschland","Österreich","Schweiz","Türkei","Vereinigte Arabische Emirate",
@@ -51,8 +52,11 @@ export function ProfileForm() {
   const [balanceAmount, setBalanceAmount] = useState("");
   const [balanceCurrency, setBalanceCurrency] = useState("EUR");
   const [balanceNote, setBalanceNote] = useState("");
+  const [balanceFile, setBalanceFile] = useState<File | null>(null);
+  const [balanceFileError, setBalanceFileError] = useState("");
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [balanceResult, setBalanceResult] = useState<"sent" | "error" | null>(null);
+  const balanceFileRef = useRef<HTMLInputElement>(null);
   const pendingBalanceCurrencies = new Set(
     requests
       .filter(r => r.type === "CHANGE_BALANCE" && r.status === "PENDING")
@@ -145,15 +149,18 @@ export function ProfileForm() {
   async function handleBalanceRequest() {
     const amount = parseFloat(balanceAmount);
     if (isNaN(amount) || amount <= 0) return;
+    if (!balanceFile) { setBalanceFileError(t("documents.pdfOnly")); return; }
     setBalanceLoading(true);
     setBalanceResult(null);
+    setBalanceFileError("");
     try {
-      await api.users.requestBalanceChange(amount, balanceCurrency, balanceNote || undefined);
+      await api.users.requestBalanceChange(amount, balanceCurrency, balanceFile, balanceNote || undefined);
       setBalanceResult("sent");
       setShowBalanceForm(false);
       setBalanceAmount("");
       setBalanceCurrency("EUR");
       setBalanceNote("");
+      setBalanceFile(null);
       api.users.myRequests().then((data) => setRequests(data as AdminRequest[])).catch(() => {});
     } catch {
       setBalanceResult("error");
@@ -216,6 +223,12 @@ export function ProfileForm() {
 
         {/* ── Tab: Profil ── */}
         {mainTab === "profile" && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
+
+            {/* Linke Spalte: Dokumente */}
+            <UserDocumentPanel />
+
+            {/* Rechte Spalte: Profilkarte */}
           <Card className="mx-auto max-w-lg p-8" style={{ boxShadow: "var(--sh-md)" }}>
 
             {/* Avatar + info */}
@@ -239,9 +252,9 @@ export function ProfileForm() {
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {([
-                  { code: "EUR", symbol: "€", label: "Euro",          flag: "🇪🇺", accent: "#3b82f6" },
-                  { code: "USD", symbol: "$", label: "US-Dollar",      flag: "🇺🇸", accent: "#10b981" },
-                  { code: "SYP", symbol: "ل.س", label: "Syr. Pfund",  flag: "🇸🇾", accent: "#f59e0b" },
+                  { code: "EUR", symbol: "€", label: "Euro",          flag: "eu", accent: "#3b82f6" },
+                  { code: "USD", symbol: "$", label: "US-Dollar",      flag: "us", accent: "#10b981" },
+                  { code: "SYP", symbol: "ل.س", label: "Syr. Pfund",  flag: "sy", accent: "#f59e0b" },
                 ] as const).map(({ code, symbol, label, flag, accent }) => {
                   const bal = (user.investment_balances ?? []).find(b => b.currency === code);
                   const amount = bal?.amount ?? 0;
@@ -253,7 +266,7 @@ export function ProfileForm() {
                       style={{ borderLeft: `3px solid ${accent}`, background: `${accent}0d` }}
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-base leading-none">{flag}</span>
+                        <span className={`fi fi-${flag} text-base`} />
                         {pending && (
                           <span
                             className="rounded-full px-1.5 py-0.5 text-[9px] font-bold leading-none"
@@ -333,18 +346,64 @@ export function ProfileForm() {
                       onChange={(e) => setBalanceNote(e.target.value)}
                       placeholder="..."
                     />
+
+                    {/* Pflicht-PDF */}
+                    <div>
+                      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-[var(--clr-text-2)]">
+                        {t("balanceRequestDoc")} <span className="text-red-500">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => balanceFileRef.current?.click()}
+                        className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-xs transition ${
+                          balanceFile
+                            ? "border-green-500/40 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                            : "border-dashed border-[var(--clr-line)] bg-[var(--clr-surface-2)] text-[var(--clr-text-2)] hover:border-[var(--clr-brand)]/50"
+                        }`}
+                      >
+                        <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                        <span className="min-w-0 flex-1 truncate">
+                          {balanceFile ? balanceFile.name : t("balanceRequestDocPlaceholder")}
+                        </span>
+                      </button>
+                      <input
+                        ref={balanceFileRef}
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          e.target.value = "";
+                          if (!f) return;
+                          if (f.type !== "application/pdf" && !f.name.toLowerCase().endsWith(".pdf")) {
+                            setBalanceFileError(t("documents.pdfOnly")); return;
+                          }
+                          if (f.size > 10 * 1024 * 1024) {
+                            setBalanceFileError(t("documents.fileTooLarge")); return;
+                          }
+                          setBalanceFileError("");
+                          setBalanceFile(f);
+                        }}
+                      />
+                      {balanceFileError && (
+                        <p className="mt-1 text-[10px] text-red-500">{balanceFileError}</p>
+                      )}
+                    </div>
+
                     <div className="flex gap-2">
                       <Button
                         type="button"
                         loading={balanceLoading}
                         loadingLabel="..."
                         onClick={handleBalanceRequest}
-                        disabled={pendingBalanceCurrencies.has(balanceCurrency)}
+                        disabled={pendingBalanceCurrencies.has(balanceCurrency) || !balanceFile}
                         className="flex-1"
                       >
                         {t("balanceRequestSubmit")}
                       </Button>
-                      <Button type="button" variant="secondary" onClick={() => { setShowBalanceForm(false); setBalanceResult(null); }} disabled={balanceLoading} className="flex-1">
+                      <Button type="button" variant="secondary" onClick={() => { setShowBalanceForm(false); setBalanceResult(null); setBalanceFile(null); setBalanceFileError(""); }} disabled={balanceLoading} className="flex-1">
                         {t("cancel")}
                       </Button>
                     </div>
@@ -399,6 +458,7 @@ export function ProfileForm() {
             </div>
 
           </Card>
+          </div>
         )}
 
         {/* ── Tab: Projekte ── */}

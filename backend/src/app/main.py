@@ -1,5 +1,6 @@
 import re
 
+import cloudinary
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -9,8 +10,16 @@ from app.routers import auth, projects, uploads, users
 from app.routers import admin
 from app.routers.participation import router as participation_router
 from app.routers.chat import router as chat_router
+from app.routers.documents import router as documents_router
 
 app = FastAPI(title="Project Platform API", version="0.1.0")
+
+cloudinary.config(
+    cloud_name=settings.cloudinary_cloud_name,
+    api_key=settings.cloudinary_api_key,
+    api_secret=settings.cloudinary_api_secret,
+    secure=True,
+)
 
 
 def is_allowed_origin(origin: str) -> bool:
@@ -50,6 +59,7 @@ app.include_router(projects.router)
 app.include_router(participation_router)
 app.include_router(chat_router)
 app.include_router(uploads.router)
+app.include_router(documents_router)
 app.include_router(admin.router)
 
 
@@ -61,7 +71,7 @@ def health():
 @app.post("/admin/reset-db")
 def reset_db(secret: str):
     from app.core.database import Base, engine
-    from app.models import user, project, token, user_balance  # noqa
+    from app.models import user, project, token, user_balance, notification, admin_request  # noqa
     if secret != settings.secret_key:
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Forbidden")

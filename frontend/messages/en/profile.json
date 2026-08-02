@@ -32,5 +32,18 @@
   "balanceRequestSubmit": "Send request",
   "balanceRequestSent": "Request submitted – awaiting admin review.",
   "balanceRequestPending": "Request pending",
-  "balanceRequestError": "Failed to submit request"
+  "balanceRequestDoc": "Proof document (PDF)",
+  "balanceRequestDocPlaceholder": "Select PDF…",
+  "balanceRequestError": "Failed to submit request",
+  "documents": {
+    "title": "My Documents",
+    "upload": "Upload PDF",
+    "uploading": "Uploading…",
+    "noDocuments": "No documents yet",
+    "open": "Open",
+    "delete": "Delete",
+    "pdfOnly": "Only PDF files allowed",
+    "fileTooLarge": "Max. 10 MB allowed",
+    "uploadError": "Upload failed"
+  }
 }

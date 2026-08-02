@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     email_verification_expire_hours: int = 24
     password_reset_expire_minutes: int = 60
 
+    # Cloudinary
+    cloudinary_cloud_name: str = ""
+    cloudinary_api_key: str = ""
+    cloudinary_api_secret: str = ""
+
     class Config:
         env_file = ".env"
 

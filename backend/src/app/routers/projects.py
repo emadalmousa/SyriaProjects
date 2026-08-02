@@ -1,6 +1,6 @@
 from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
 from app.core.helpers import calculate_funding_progress
@@ -294,15 +294,26 @@ def remove_member(
     db.commit()
 
 
+MIN_AMOUNTS = {"EUR": Decimal("100"), "USD": Decimal("100"), "SYP": Decimal("10000")}
+
+
 class JoinRequest(BaseModel):
     amount: Decimal
+    currency: str = "EUR"
 
-    @field_validator("amount")
+    @field_validator("currency")
     @classmethod
-    def min_amount(cls, v: Decimal) -> Decimal:
-        if v < Decimal("100"):
-            raise ValueError("Mindestbetrag ist 100 €")
+    def valid_currency(cls, v: str) -> str:
+        if v not in ("EUR", "USD", "SYP"):
+            raise ValueError("Ungültige Währung")
         return v
+
+    @model_validator(mode="after")
+    def check_min_amount(self) -> "JoinRequest":
+        minimum = MIN_AMOUNTS.get(self.currency, Decimal("100"))
+        if self.amount < minimum:
+            raise ValueError(f"Mindestbetrag ist {minimum} {self.currency}")
+        return self
 
 
 @router.post("/{project_id}/join", status_code=status.HTTP_201_CREATED)
@@ -331,6 +342,7 @@ def join_project(
         interest_type=InterestType.INVESTMENT,
         status=InterestStatus.PENDING,
         amount=data.amount,
+        currency=data.currency,
     )
     db.add(interest)
     db.flush()
@@ -399,6 +411,7 @@ def get_participants(
             phone=user.phone if show_private else None,
             country=user.country,
             amount=interest.amount,
+            currency=interest.currency,
             status=interest.status.value,
             joined_at=interest.created_at,
         ))

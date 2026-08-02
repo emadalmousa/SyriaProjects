@@ -163,6 +163,7 @@ class ProjectInterest(Base):
     interest_type = Column(Enum(InterestType), nullable=False)
     message = Column(Text)
     amount = Column(Numeric(12, 2), nullable=True)
+    currency = Column(String(10), nullable=True)
     status = Column(Enum(InterestStatus), default=InterestStatus.PENDING, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -230,3 +231,21 @@ class ProjectChatMessage(Base):
     sender_user_id = Column(Integer, ForeignKey("users.id",    ondelete="SET NULL"), nullable=True)
     content        = Column(Text, nullable=False)
     created_at     = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
+
+class DocumentType(str, enum.Enum):
+    PROJECT_DOCUMENT     = "PROJECT_DOCUMENT"
+    PARTICIPANT_DOCUMENT = "PARTICIPANT_DOCUMENT"
+
+
+class ProjectDocument(Base):
+    __tablename__ = "project_documents"
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    project_id          = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    interest_id         = Column(Integer, ForeignKey("project_interests.id", ondelete="SET NULL"), nullable=True, index=True)
+    document_type       = Column(Enum(DocumentType), nullable=False)
+    file_url            = Column(Text, nullable=False)
+    original_name       = Column(Text, nullable=False)
+    uploaded_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at          = Column(DateTime(timezone=True), server_default=func.now())

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
@@ -16,6 +16,7 @@ declare global {
         id: {
           initialize: (config: { client_id: string; callback: (res: { credential: string }) => void }) => void;
           prompt: () => void;
+          renderButton: (parent: HTMLElement, options: object) => void;
         };
       };
     };
@@ -80,7 +81,7 @@ function HomeContent() {
     searchParams.get("tab") === "register" ? "register" : "login"
   );
   const [error, setError] = useState("");
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const googleBtnRef = useRef<HTMLDivElement>(null);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -112,15 +113,31 @@ function HomeContent() {
   }, [regForm.password]);
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || !window.google) return;
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleCredential,
-    });
+    if (!GOOGLE_CLIENT_ID) return;
+    let attempts = 0;
+    const init = () => {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCredential,
+        });
+        if (googleBtnRef.current) {
+          window.google.accounts.id.renderButton(googleBtnRef.current, {
+            theme: "outline",
+            size: "large",
+            width: googleBtnRef.current.offsetWidth || 400,
+            text: "signin_with",
+          });
+        }
+      } else if (attempts++ < 30) {
+        setTimeout(init, 100);
+      }
+    };
+    init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleGoogleCredential(response: { credential: string }) {
-    setGoogleLoading(true);
     setError("");
     try {
       const data = await api.auth.googleLogin(response.credential);
@@ -128,21 +145,7 @@ function HomeContent() {
       router.push("/dashboard");
     } catch {
       setError(tLogin("googleFailed"));
-    } finally {
-      setGoogleLoading(false);
     }
-  }
-
-  function handleGoogle() {
-    if (!GOOGLE_CLIENT_ID) {
-      setError("Google Login ist noch nicht eingerichtet. Bitte NEXT_PUBLIC_GOOGLE_CLIENT_ID in .env.local setzen.");
-      return;
-    }
-    if (!window.google) {
-      setError("Google-Skript konnte nicht geladen werden. Seite neu laden und erneut versuchen.");
-      return;
-    }
-    window.google.accounts.id.prompt();
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -221,11 +224,7 @@ function HomeContent() {
           </div>
 
           {/* Google button */}
-          <GoogleButton
-            onClick={handleGoogle}
-            loading={googleLoading}
-            label={tLogin("googleButton")}
-          />
+          <div ref={googleBtnRef} className="flex w-full justify-center" style={{ minHeight: 44 }} />
 
           <div className="my-5">
             <Divider label={tc("or")} />

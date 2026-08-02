@@ -211,7 +211,7 @@ export function ManagementView() {
               type TaskRow =
                 | { kind: "project"; id: number; user: string; title: string; subtitle?: string; city?: string; detail: string; date: string }
                 | { kind: "join";    id: number; user: string; email: string; title: string; detail: string; date: string; projectId: number }
-                | { kind: "balance"; id: number; user: string; title: string; detail: string; date: string }
+                | { kind: "balance"; id: number; user: string; title: string; detail: string; date: string; documentUrl?: string }
                 | { kind: "other";   id: number; user: string; title: string; detail: string; date: string; projectId?: number };
 
               const rows: TaskRow[] = [];
@@ -219,13 +219,14 @@ export function ManagementView() {
               (tasks?.pending_interests ?? []).forEach(i => rows.push({ kind: "join", id: i.id, user: i.user_name, email: i.user_email, title: i.project_title, detail: i.amount ? `${Number(i.amount).toLocaleString()} €` : "—", date: i.created_at, projectId: i.project_id }));
               (tasks?.pending_requests ?? []).forEach(r => {
                 let detail = "—";
+                let documentUrl: string | undefined;
                 try {
                   const p = r.payload ? JSON.parse(r.payload) : {};
-                  if (r.type === "CHANGE_BALANCE") { const cur = p.currency || "EUR"; detail = p.amount != null ? `+${Number(p.amount).toLocaleString()} ${cur}` : "—"; }
+                  if (r.type === "CHANGE_BALANCE") { const cur = p.currency || "EUR"; detail = p.amount != null ? `+${Number(p.amount).toLocaleString()} ${cur}` : "—"; documentUrl = p.document_url; }
                   else if (p.amount) { detail = `${Number(p.amount).toLocaleString()} €`; }
                   else if (p.field) { detail = p.value ? `${p.field} → ${p.value}` : p.field; }
                 } catch { /* ignore */ }
-                if (r.type === "CHANGE_BALANCE") rows.push({ kind: "balance", id: r.id, user: r.requester_name || "—", title: tProject("requestTypeLabel.CHANGE_BALANCE"), detail, date: r.created_at });
+                if (r.type === "CHANGE_BALANCE") rows.push({ kind: "balance", id: r.id, user: r.requester_name || "—", title: tProject("requestTypeLabel.CHANGE_BALANCE"), detail, date: r.created_at, documentUrl });
                 else rows.push({ kind: "other", id: r.id, user: r.requester_name || "—", title: tProject(`requestTypeLabel.${r.type}`), detail, date: r.created_at, projectId: r.project_id });
               });
 
@@ -280,7 +281,15 @@ export function ManagementView() {
                                     {row.kind === "project" && row.subtitle && <p className="text-xs text-[var(--clr-text-2)] line-clamp-1">{row.subtitle}</p>}
                                     {row.kind === "project" && row.city && <p className="text-xs text-[var(--clr-text-3)]">{row.city}</p>}
                                   </td>
-                                  <td className="px-4 py-3 text-xs font-semibold text-[var(--clr-brand)]">{row.detail}</td>
+                                  <td className="px-4 py-3 text-xs font-semibold text-[var(--clr-brand)]">
+                                    <span>{row.detail}</span>
+                                    {row.kind === "balance" && row.documentUrl && (
+                                      <a href={row.documentUrl} target="_blank" rel="noopener noreferrer" className="ml-2 inline-flex items-center gap-1 rounded-md border border-[var(--clr-line)] bg-[var(--clr-surface-2)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--clr-text-2)] hover:border-[var(--clr-brand)] hover:text-[var(--clr-brand)] transition-colors">
+                                        <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                                        PDF
+                                      </a>
+                                    )}
+                                  </td>
                                   <td className="px-4 py-3 text-xs text-[var(--clr-text-3)]">{new Date(row.date).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}</td>
                                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                                     <div className="flex gap-2">
@@ -323,7 +332,7 @@ export function ManagementView() {
               type HistoryRow =
                 | { kind: "project"; id: number; user: string; title: string; city?: string; detail: string; result: string; resultOk: boolean; date: string }
                 | { kind: "join";    id: number; user: string; email: string; title: string; detail: string; result: string; resultOk: boolean; date: string; projectId: number }
-                | { kind: "balance"; id: number; user: string; title: string; detail: string; result: string; resultOk: boolean; date: string; note?: string }
+                | { kind: "balance"; id: number; user: string; title: string; detail: string; result: string; resultOk: boolean; date: string; note?: string; documentUrl?: string }
                 | { kind: "other";   id: number; user: string; title: string; detail: string; result: string; resultOk: boolean; date: string; note?: string; projectId?: number };
 
               const hrows: HistoryRow[] = [];
@@ -331,14 +340,15 @@ export function ManagementView() {
               (history?.reviewed_interests ?? []).forEach(i => hrows.push({ kind: "join", id: i.id, user: i.user_name || "—", email: i.user_email || "", title: i.project_title || "—", detail: i.amount ? `${Number(i.amount).toLocaleString()} €` : "—", result: i.status === "ACCEPTED" ? t("resultApproved") : t("resultRejected"), resultOk: i.status === "ACCEPTED", date: i.decided_at, projectId: i.project_id }));
               (history?.reviewed_requests ?? []).forEach(r => {
                 let detail = "—";
+                let documentUrl: string | undefined;
                 try {
                   const p = r.payload ? JSON.parse(r.payload) : {};
-                  if (r.type === "CHANGE_BALANCE") { const cur = p.currency || "EUR"; detail = p.amount != null ? `+${Number(p.amount).toLocaleString()} ${cur}` : "—"; }
+                  if (r.type === "CHANGE_BALANCE") { const cur = p.currency || "EUR"; detail = p.amount != null ? `+${Number(p.amount).toLocaleString()} ${cur}` : "—"; documentUrl = p.document_url; }
                   else if (p.amount) { detail = `${Number(p.amount).toLocaleString()} €`; }
                   else if (p.field) { detail = p.value ? `${p.field} → ${p.value}` : p.field; }
                 } catch { /* ignore */ }
                 const ok = r.status === "ACCEPTED";
-                if (r.type === "CHANGE_BALANCE") hrows.push({ kind: "balance", id: r.id, user: r.requester_name || "—", title: tProject("requestTypeLabel.CHANGE_BALANCE"), detail, result: ok ? t("resultApproved") : t("resultRejected"), resultOk: ok, date: r.decided_at, note: r.admin_note });
+                if (r.type === "CHANGE_BALANCE") hrows.push({ kind: "balance", id: r.id, user: r.requester_name || "—", title: tProject("requestTypeLabel.CHANGE_BALANCE"), detail, result: ok ? t("resultApproved") : t("resultRejected"), resultOk: ok, date: r.decided_at, note: r.admin_note, documentUrl });
                 else hrows.push({ kind: "other", id: r.id, user: r.requester_name || "—", title: tProject(`requestTypeLabel.${r.type}`), detail, result: ok ? t("resultApproved") : t("resultRejected"), resultOk: ok, date: r.decided_at, note: r.admin_note, projectId: r.project_id });
               });
 
@@ -394,7 +404,15 @@ export function ManagementView() {
                                     <p className="text-[var(--clr-text-2)]">{row.kind === "balance" ? "—" : row.title}</p>
                                     {row.kind === "project" && row.city && <p className="text-xs text-[var(--clr-text-3)]">{row.city}</p>}
                                   </td>
-                                  <td className="px-4 py-3 text-xs font-semibold text-[var(--clr-brand)]">{row.detail}</td>
+                                  <td className="px-4 py-3 text-xs font-semibold text-[var(--clr-brand)]">
+                                    <span>{row.detail}</span>
+                                    {row.kind === "balance" && row.documentUrl && (
+                                      <a href={row.documentUrl} target="_blank" rel="noopener noreferrer" className="ml-2 inline-flex items-center gap-1 rounded-md border border-[var(--clr-line)] bg-[var(--clr-surface-2)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--clr-text-2)] hover:border-[var(--clr-brand)] hover:text-[var(--clr-brand)] transition-colors">
+                                        <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                                        PDF
+                                      </a>
+                                    )}
+                                  </td>
                                   <td className="px-4 py-3">
                                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${row.resultOk ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
                                       {row.result}

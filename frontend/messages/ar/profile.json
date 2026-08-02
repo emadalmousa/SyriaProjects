@@ -32,5 +32,18 @@
   "balanceRequestSubmit": "إرسال الطلب",
   "balanceRequestSent": "تم تقديم الطلب – في انتظار مراجعة المسؤول.",
   "balanceRequestPending": "الطلب قيد الانتظار",
-  "balanceRequestError": "فشل إرسال الطلب"
+  "balanceRequestDoc": "وثيقة إثبات (PDF)",
+  "balanceRequestDocPlaceholder": "اختر ملف PDF…",
+  "balanceRequestError": "فشل إرسال الطلب",
+  "documents": {
+    "title": "وثائقي",
+    "upload": "رفع PDF",
+    "uploading": "جارٍ الرفع…",
+    "noDocuments": "لا توجد وثائق بعد",
+    "open": "فتح",
+    "delete": "حذف",
+    "pdfOnly": "يُسمح فقط بملفات PDF",
+    "fileTooLarge": "الحجم الأقصى 10 ميغابايت",
+    "uploadError": "فشل رفع الملف"
+  }
 }

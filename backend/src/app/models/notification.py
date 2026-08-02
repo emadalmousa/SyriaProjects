@@ -19,6 +19,7 @@ class NotificationType(str, enum.Enum):
     CHANGE_REQUESTED        = "CHANGE_REQUESTED"
     REQUEST_ACCEPTED        = "REQUEST_ACCEPTED"
     REQUEST_REJECTED        = "REQUEST_REJECTED"
+    DOCUMENT_UPLOADED       = "DOCUMENT_UPLOADED"
 
 
 class SystemNotification(Base):

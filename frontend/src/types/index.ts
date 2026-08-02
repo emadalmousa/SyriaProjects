@@ -73,6 +73,7 @@ export interface Participant {
   phone: string | null;
   country: string | null;
   amount: number | null;
+  currency: string | null;
   status: string;
   joined_at: string | null;
 }
@@ -290,4 +291,26 @@ export interface ChatMessagePage {
   messages: ChatMessage[];
   next_cursor: number | null;
   has_more: boolean;
+}
+
+export type DocumentType = "PROJECT_DOCUMENT" | "PARTICIPANT_DOCUMENT";
+
+export interface ProjectDocument {
+  id: number;
+  project_id: number;
+  interest_id: number | null;
+  document_type: DocumentType;
+  file_url: string;
+  original_name: string;
+  uploaded_by_user_id: number | null;
+  uploader_name: string | null;
+  created_at: string | null;
+}
+
+export interface UserDocument {
+  id: number;
+  user_id: number;
+  file_url: string;
+  original_name: string;
+  created_at: string | null;
 }

@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, field_validator
 from app.models.project import (
-    InterestStatus, InterestType, MilestoneStatus, ProjectCategory,
+    DocumentType, InterestStatus, InterestType, MilestoneStatus, ProjectCategory,
     ProjectRole, ProjectStatus, ProjectUpdateVisibility, ProjectVisibility,
     RiskLevel, VerificationStatus,
 )
@@ -165,6 +165,7 @@ class ParticipantResponse(BaseModel):
     phone: Optional[str]
     country: Optional[str]
     amount: Optional[Decimal]
+    currency: Optional[str]
     status: str
     joined_at: Optional[datetime]
 
@@ -221,6 +222,7 @@ class ProjectInterestCreate(BaseModel):
     interest_type: InterestType
     message: str | None = None
     amount: Optional[Decimal] = None
+    currency: str | None = None
 
 
 class ProjectInterestResponse(BaseModel):
@@ -230,6 +232,7 @@ class ProjectInterestResponse(BaseModel):
     interest_type: InterestType
     message: str | None
     amount: Optional[Decimal] = None
+    currency: str | None = None
     status: InterestStatus
 
     model_config = {"from_attributes": True}
@@ -407,3 +410,17 @@ class ChatMessagePage(BaseModel):
     messages: list[ChatMessageRead]
     next_cursor: int | None = None
     has_more: bool
+
+
+class ProjectDocumentRead(BaseModel):
+    id: int
+    project_id: int
+    interest_id: Optional[int] = None
+    document_type: DocumentType
+    file_url: str
+    original_name: str
+    uploaded_by_user_id: Optional[int] = None
+    uploader_name: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
